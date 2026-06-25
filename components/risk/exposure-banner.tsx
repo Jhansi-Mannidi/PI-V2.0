@@ -7,14 +7,18 @@ import {
   OPEN_ISSUE_COUNT, DISCOVERED_COUNT, OPEN_AUDIT_COUNT,
 } from '@/lib/risk-data'
 import { AnimNum } from '@/components/animated-primitives'
+import { useActionModal } from '@/hooks/use-action-modal'
+import { useAI } from '@/components/ai-provider'
 
 // §6.3 Aggregate exposure & the weekly triage banner
 export function ExposureBanner() {
+  const action = useActionModal()
+  const { aiEnabled } = useAI()
   const stats = [
-    { label: 'Open Risks', value: OPEN_RISK_COUNT, icon: ShieldAlert, accent: 'text-red', bg: 'bg-red-bg', ring: 'hover:border-red/40' },
-    { label: 'Live Issues', value: OPEN_ISSUE_COUNT, icon: TrendingUp, accent: 'text-amber', bg: 'bg-amber-bg', ring: 'hover:border-amber/40' },
-    { label: 'AI-Discovered', value: DISCOVERED_COUNT, icon: Bot, accent: 'text-teal', bg: 'bg-teal-soft', ring: 'hover:border-teal/40' },
-    { label: 'Open Audits', value: OPEN_AUDIT_COUNT, icon: FileSearch, accent: 'text-gold', bg: 'bg-gold-pale', ring: 'hover:border-gold/40' },
+    { label: 'Open Risks', value: OPEN_RISK_COUNT, icon: ShieldAlert, accent: 'text-red', bg: 'bg-red-bg', ring: 'hover:border-red/40', actionLabel: 'Review risk register' },
+    { label: 'Live Issues', value: OPEN_ISSUE_COUNT, icon: TrendingUp, accent: 'text-amber', bg: 'bg-amber-bg', ring: 'hover:border-amber/40', actionLabel: 'Open issue board' },
+    ...(aiEnabled ? [{ label: 'AI-Discovered', value: DISCOVERED_COUNT, icon: Bot, accent: 'text-teal', bg: 'bg-teal-soft', ring: 'hover:border-teal/40', actionLabel: 'Triage AI candidates' }] : []),
+    { label: 'Open Audits', value: OPEN_AUDIT_COUNT, icon: FileSearch, accent: 'text-gold', bg: 'bg-gold-pale', ring: 'hover:border-gold/40', actionLabel: 'Review audit console' },
   ]
 
   return (
@@ -60,6 +64,36 @@ export function ExposureBanner() {
           {stats.map((s) => (
             <button
               key={s.label}
+              onClick={() =>
+                action.open({
+                  tone: s.label === 'Open Risks' ? 'destructive' : s.label === 'AI-Discovered' ? 'info' : 'warning',
+                  icon: s.icon,
+                  title: `${s.label} Snapshot`,
+                  description: `There are ${s.value} items in this exposure slice. Choose the next portfolio action.`,
+                  context: [
+                    { label: 'Metric', value: s.label },
+                    { label: 'Count', value: s.value },
+                    { label: 'Total exposure', value: `$${TOTAL_EXPOSURE_COST.toFixed(1)}M / ${TOTAL_EXPOSURE_DAYS}d` },
+                  ],
+                  fields: [
+                    {
+                      type: 'select',
+                      name: 'nextAction',
+                      label: 'Next action',
+                      defaultValue: 'review',
+                      required: true,
+                      options: [
+                        { value: 'review', label: s.actionLabel },
+                        { value: 'digest', label: 'Create digest for leadership' },
+                        { value: 'owner', label: 'Notify accountable owners' },
+                      ],
+                    },
+                  ],
+                  confirmLabel: 'Queue Action',
+                  successToast: `${s.label} action queued`,
+                  successDescription: `${s.actionLabel} added to the portfolio risk work queue.`,
+                })
+              }
               className={`group flex flex-col gap-1.5 rounded-xl border border-line px-3 py-2.5 text-left transition-all hover:shadow-sm hover:-translate-y-0.5 ${s.bg} ${s.ring}`}
             >
               <div className="flex items-center justify-between">
@@ -76,6 +110,7 @@ export function ExposureBanner() {
           ))}
         </div>
       </div>
+      {action.element}
     </div>
   )
 }

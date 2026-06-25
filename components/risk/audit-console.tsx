@@ -3,8 +3,10 @@
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
-import { FileSearch, ChevronDown, ArrowRight, CircleCheck, CircleAlert, CircleX } from 'lucide-react'
+import { FileSearch, ChevronDown, ArrowRight, CircleCheck, CircleAlert, CircleX, ShieldCheck } from 'lucide-react'
 import { AUDITS, BAND_META, type AuditStatus } from '@/lib/risk-data'
+import { Button } from '@/components/ui/button'
+import { useActionModal } from '@/hooks/use-action-modal'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
 
@@ -18,7 +20,9 @@ const STATUS_STYLE: Record<AuditStatus, string> = {
 
 // R-05 Audit Console — schedule, in-flight audits, findings ledger, finding→risk links (§7)
 export function AuditConsole() {
+  const action = useActionModal()
   const [open, setOpen] = React.useState<string | null>(AUDITS[0]?.id ?? null)
+  const [queuedAudits, setQueuedAudits] = React.useState<Set<string>>(new Set())
 
   return (
     <div className="space-y-4">
@@ -117,6 +121,46 @@ export function AuditConsole() {
                           ))}
                         </div>
                       )}
+                      <div className="mt-3 flex justify-end">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-[11px] gap-1.5 border-line"
+                          onClick={() =>
+                            action.open({
+                              tone: a.findings.length > 0 ? 'warning' : 'primary',
+                              icon: ShieldCheck,
+                              title: `Audit follow-up — ${a.id}`,
+                              description: 'Create a tracked follow-up action for this audit instance.',
+                              context: [
+                                { label: 'Audit', value: a.id },
+                                { label: 'Scope', value: a.scope },
+                                { label: 'Status', value: a.status },
+                                { label: 'Findings', value: a.findings.length },
+                              ],
+                              fields: [
+                                {
+                                  type: 'textarea',
+                                  name: 'followup',
+                                  label: 'Follow-up action',
+                                  defaultValue: a.findings.length > 0 ? 'Assign remediation owner and link findings to risk register.' : 'Confirm audit evidence and close review.',
+                                  rows: 3,
+                                  required: true,
+                                },
+                              ],
+                              confirmLabel: 'Queue Follow-up',
+                              successToast: `${a.id} follow-up queued`,
+                              successDescription: 'Audit follow-up has been added to the controls work queue.',
+                              onConfirm: () => {
+                                setQueuedAudits((prev) => new Set(prev).add(a.id))
+                              },
+                            })
+                          }
+                        >
+                          <ShieldCheck className="w-3.5 h-3.5" />
+                          {queuedAudits.has(a.id) ? 'Follow-up queued' : 'Queue follow-up'}
+                        </Button>
+                      </div>
                     </div>
                   </motion.div>
                 )}
@@ -125,6 +169,7 @@ export function AuditConsole() {
           )
         })}
       </div>
+      {action.element}
     </div>
   )
 }

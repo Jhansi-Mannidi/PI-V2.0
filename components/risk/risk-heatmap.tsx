@@ -24,6 +24,45 @@ interface Props {
 export function RiskHeatmap({ onCellSelect }: Props) {
   const [expanded, setExpanded] = React.useState<string | null>(null)
 
+  const downloadBoard = () => {
+    const generatedAt = new Date()
+    const rows = PORTFOLIO_HEATMAP.map((row) => {
+      const scores = HEATMAP_CATEGORIES
+        .map((category) => `${category}: ${row.scores[category] ?? 0}`)
+        .join(', ')
+      return `- ${row.program}: ${scores}; exposure $${row.exposure.toFixed(1)}M`
+    })
+    const drillRows = PROGRAM_DRILLS.flatMap((drill) =>
+      drill.projects.map((project) => {
+        const scores = HEATMAP_CATEGORIES
+          .map((category) => `${category}: ${project.scores[category] ?? 0}`)
+          .join(', ')
+        return `  - ${drill.program} / ${project.project}: ${scores}; exposure $${project.exposure.toFixed(1)}M`
+      }),
+    )
+    const content = [
+      '# Portfolio Risk Heatmap Board',
+      '',
+      `Generated: ${generatedAt.toLocaleString()}`,
+      '',
+      '## Program Scores',
+      ...rows,
+      '',
+      '## Project Drilldowns',
+      ...drillRows,
+      '',
+    ].join('\n')
+    const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `risk-heatmap-board-${generatedAt.toISOString().slice(0, 10)}.md`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="bg-card rounded-xl border border-line overflow-hidden shadow-sm">
       <div className="px-4 py-3.5 border-b border-line flex items-center justify-between gap-3 flex-wrap">
@@ -151,7 +190,7 @@ export function RiskHeatmap({ onCellSelect }: Props) {
 
       <div className="px-5 py-3 border-t border-line flex items-center justify-between">
         <p className="text-[10px] text-muted-foreground">Click any cell to drill into the underlying ranked register. Every number traces to the certified semantic layer.</p>
-        <button className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
+        <button onClick={downloadBoard} className="flex items-center gap-1.5 text-[10px] font-semibold text-muted-foreground hover:text-foreground transition-colors">
           <Download className="w-3.5 h-3.5" /> Board PDF
         </button>
       </div>

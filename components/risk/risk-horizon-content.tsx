@@ -20,7 +20,6 @@ import {
   Calendar,
   Zap,
 } from 'lucide-react'
-import { useToast } from '@/hooks/use-toast'
 import { useActionModal } from '@/hooks/use-action-modal'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -165,18 +164,54 @@ const horizons = ['24h', '48h', '72h', '7d'] as const
 
 export function RiskHorizonContent() {
   const { aiEnabled } = useAI()
-  const { toast } = useToast()
   const [horizon, setHorizon] = React.useState<string>('72h')
   const [confidenceThreshold, setConfidenceThreshold] = React.useState(50)
   const [expandedRow, setExpandedRow] = React.useState<string | null>(null)
   const [factorFilter, setFactorFilter] = React.useState<string | null>(null)
   const [searchQuery, setSearchQuery] = React.useState('')
+  const [queuedActions, setQueuedActions] = React.useState<Set<string>>(new Set())
   const action = useActionModal()
 
   const handleRecommendedAction = (pred: typeof predictions[0]) => {
-    toast({
-      title: 'Action initiated',
-      description: `${pred.recommendedAction} for ${pred.project} ${pred.process}. Expected outcome: ${pred.expectedOutcome}`,
+    action.open({
+      tone: 'primary',
+      icon: Zap,
+      title: `Queue recommended action — ${pred.id}`,
+      description: 'Create a tracked mitigation action from this prediction and assign it to the responsible service role.',
+      context: [
+        { label: 'Prediction', value: pred.id },
+        { label: 'Project', value: pred.project },
+        { label: 'SLA risk', value: pred.process },
+        { label: 'Expected outcome', value: pred.expectedOutcome },
+      ],
+      fields: [
+        {
+          type: 'select',
+          name: 'priority',
+          label: 'Priority',
+          defaultValue: pred.confidence >= 75 ? 'critical' : 'high',
+          required: true,
+          options: [
+            { value: 'critical', label: 'Critical — execute immediately' },
+            { value: 'high', label: 'High — queue for current work cycle' },
+            { value: 'standard', label: 'Standard — monitor and execute if risk rises' },
+          ],
+        },
+        {
+          type: 'textarea',
+          name: 'instructions',
+          label: 'Action instructions',
+          defaultValue: pred.recommendedAction,
+          rows: 3,
+          required: true,
+        },
+      ],
+      confirmLabel: 'Queue Action',
+      successToast: `${pred.id} action queued`,
+      successDescription: `${pred.recommendedAction} · ${pred.expectedOutcome}`,
+      onConfirm: () => {
+        setQueuedActions((prev) => new Set(prev).add(pred.id))
+      },
     })
   }
 
@@ -199,45 +234,49 @@ export function RiskHorizonContent() {
     <>
       <div className="space-y-4 sm:space-y-6 w-full">
         {/* ── Aggregate Exposure Banner ── */}
-        <div className="bg-card rounded-xl border border-line p-5 shadow-sm">
-          <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-gold" />
+        <div className="relative overflow-hidden rounded-xl border border-line bg-card shadow-sm">
+          <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/50 to-transparent" />
+          <div className="flex flex-col lg:flex-row lg:items-center gap-4 px-5 py-4">
+            <div className="flex items-center gap-3 min-w-[280px]">
+              <div className="w-9 h-9 rounded-xl bg-gold/12 ring-1 ring-gold/25 flex items-center justify-center">
+                <AlertTriangle className="w-4.5 h-4.5 text-gold" />
               </div>
               <div>
-                <h3 className="text-sm font-semibold text-foreground">This Week&apos;s Predicted SLA-Risk Exposure</h3>
-                <p className="text-[11px] text-muted-foreground">Based on {predictions.length} high-confidence predictions</p>
+                <p className="text-[9px] font-bold uppercase tracking-[0.16em] text-gold">Risk Horizon</p>
+                <h3 className="text-[13px] font-semibold text-foreground tracking-[-0.01em]">Predicted SLA-Risk Exposure</h3>
+                <p className="text-[10.5px] text-muted-foreground">Based on {predictions.length} high-confidence predictions</p>
               </div>
             </div>
 
-            <div className="flex-1 flex flex-wrap items-center gap-6 lg:justify-center">
+            <div className="flex-1 grid grid-cols-[1fr_auto_1fr] items-center gap-3 lg:px-2">
               {/* Current Exposure */}
-              <div className="text-center">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">If No Action</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-mono font-bold text-red">${totalImpactCost.toFixed(1)}M</span>
-                  <span className="text-muted-foreground/60">+</span>
-                  <span className="text-2xl font-mono font-bold text-red">{totalImpactDays}</span>
-                  <span className="text-sm text-muted-foreground">days</span>
+              <div className="rounded-lg border border-red/10 bg-red-bg/50 px-3 py-2 text-center">
+                <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground mb-1">If no action</p>
+                <div className="flex items-baseline justify-center gap-1.5">
+                  <span className="text-xl font-mono font-bold text-red">${totalImpactCost.toFixed(1)}M</span>
+                  <span className="text-muted-foreground/50">+</span>
+                  <span className="text-xl font-mono font-bold text-red">{totalImpactDays}</span>
+                  <span className="text-[11px] text-muted-foreground">days</span>
                 </div>
               </div>
 
               {/* Arrow */}
-              <div className="hidden sm:flex items-center gap-2">
-                <div className="w-8 h-px bg-gradient-to-r from-red to-green" />
-                <Zap className="w-4 h-4 text-gold" />
-                <div className="w-8 h-px bg-gradient-to-r from-green to-green" />
+              <div className="hidden sm:flex items-center gap-1.5">
+                <div className="w-8 h-px bg-gradient-to-r from-red/40 to-gold/70" />
+                <div className="w-7 h-7 rounded-full border border-gold/25 bg-gold/10 flex items-center justify-center">
+                  <Zap className="w-3.5 h-3.5 text-gold" />
+                </div>
+                <div className="w-8 h-px bg-gradient-to-r from-gold/70 to-green/50" />
               </div>
 
               {/* After Actions */}
-              <div className="text-center">
-                <p className="text-[10px] uppercase tracking-wider text-muted-foreground mb-1">After {predictions.length} Actions</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-mono font-bold text-green">${totalReducedCost.toFixed(1)}M</span>
-                  <span className="text-muted-foreground/60">+</span>
-                  <span className="text-2xl font-mono font-bold text-green">{totalReducedDays}</span>
-                  <span className="text-sm text-muted-foreground">days</span>
+              <div className="rounded-lg border border-green/10 bg-green-bg/60 px-3 py-2 text-center">
+                <p className="text-[9px] uppercase tracking-[0.14em] text-muted-foreground mb-1">After {predictions.length} actions</p>
+                <div className="flex items-baseline justify-center gap-1.5">
+                  <span className="text-xl font-mono font-bold text-green">${totalReducedCost.toFixed(1)}M</span>
+                  <span className="text-muted-foreground/50">+</span>
+                  <span className="text-xl font-mono font-bold text-green">{totalReducedDays}</span>
+                  <span className="text-[11px] text-muted-foreground">days</span>
                 </div>
               </div>
             </div>
@@ -273,7 +312,7 @@ export function RiskHorizonContent() {
                     successDescription: 'Owners notified · monitoring outcomes',
                   })
                 }
-                className="font-semibold h-9 text-xs gap-1.5 bg-gold text-navy hover:bg-gold/90 border border-gold"
+                className="font-semibold h-9 text-xs gap-1.5 bg-gold text-navy border border-gold shadow-[0_6px_18px_rgba(212,160,76,0.18)]"
               >
                 <Zap className="w-3.5 h-3.5" />
                 Execute All Recommended
@@ -337,10 +376,12 @@ export function RiskHorizonContent() {
             <h3 className="font-sans text-base font-semibold text-foreground">
               SLA Risk Forecast Timeline
             </h3>
-            <Badge variant="outline" className="text-[10px] font-mono border-teal/30 text-teal">
-              <Bot className="w-3 h-3 mr-1" />
-              A-303 Risk Horizon Forecaster
-            </Badge>
+            {aiEnabled && (
+              <Badge variant="outline" className="text-[10px] font-mono border-teal/30 text-teal">
+                <Bot className="w-3 h-3 mr-1" />
+                A-303 Risk Horizon Forecaster
+              </Badge>
+            )}
           </div>
 
           {/* Simplified time-band chart */}
@@ -512,10 +553,10 @@ export function RiskHorizonContent() {
                         e.stopPropagation()
                         handleRecommendedAction(pred)
                       }}
-                      className="h-8 text-xs gap-1.5 font-semibold shrink-0 bg-gold text-navy hover:bg-gold/90 border border-gold"
+                      className="h-8 text-xs gap-1.5 font-semibold shrink-0 bg-gold text-navy border border-gold"
                     >
                       <Zap className="w-3 h-3" />
-                      {pred.recommendedAction}
+                      {queuedActions.has(pred.id) ? 'Action queued' : pred.recommendedAction}
                     </Button>
                     <span className="text-[10px] text-muted-foreground italic">
                       ({pred.actionRationale})
@@ -547,7 +588,7 @@ export function RiskHorizonContent() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs gap-1 border-red/30 text-red hover:bg-red-bg"
+                          className="h-7 text-xs gap-1 border-red/30 text-red"
                           onClick={() =>
                             action.open({
                               tone: 'destructive',
@@ -586,7 +627,7 @@ export function RiskHorizonContent() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs gap-1 border-amber/30 text-amber hover:bg-amber-bg"
+                          className="h-7 text-xs gap-1 border-amber/30 text-amber"
                           onClick={() =>
                             action.open({
                               tone: 'warning',
@@ -623,7 +664,7 @@ export function RiskHorizonContent() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="h-7 text-xs gap-1 border-teal/30 text-teal hover:bg-teal-soft"
+                          className="h-7 text-xs gap-1 border-teal/30 text-teal"
                           onClick={() =>
                             action.open({
                               tone: 'info',

@@ -22,6 +22,7 @@ import { AuditConsole } from '@/components/risk/audit-console'
 import { ImpactExplorer } from '@/components/risk/impact-explorer'
 import { RiskHorizonContent } from '@/components/risk/risk-horizon-content'
 import { RiskCaptureForm } from '@/components/risk/risk-capture-form'
+import { useAI } from '@/components/ai-provider'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
 
@@ -37,10 +38,17 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutGrid }[] = [
 ]
 
 export default function RiskManagementPage() {
+  const { aiEnabled } = useAI()
   const [tab, setTab] = useState<TabId>('overview')
   const [captureOpen, setCaptureOpen] = useState(false)
+  const [registerProgram, setRegisterProgram] = useState<string | null>(null)
+  const [registerCategory, setRegisterCategory] = useState<string | null>(null)
 
-  const goRegister = () => setTab('register')
+  const goRegister = (program?: string, category?: string) => {
+    setRegisterProgram(program ?? null)
+    setRegisterCategory(category ?? null)
+    setTab('register')
+  }
 
   return (
     <AppShell
@@ -87,11 +95,17 @@ export default function RiskManagementPage() {
               <div className="space-y-5">
                 <ExposureBanner />
                 <RiskHeatmap onCellSelect={goRegister} />
-                <DiscoveryFeed />
+                {aiEnabled && <DiscoveryFeed />}
               </div>
             )}
             {tab === 'horizon' && <RiskHorizonContent />}
-            {tab === 'register' && <RiskRegister onCapture={() => setCaptureOpen(true)} />}
+            {tab === 'register' && (
+              <RiskRegister
+                initialProgram={registerProgram}
+                initialCategory={registerCategory}
+                onCapture={() => setCaptureOpen(true)}
+              />
+            )}
             {tab === 'issues' && <IssueBoard />}
             {tab === 'audits' && <AuditConsole />}
             {tab === 'impact' && <ImpactExplorer />}

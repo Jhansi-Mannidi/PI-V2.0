@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import { Search, Bot, ArrowUpDown, ChevronRight } from 'lucide-react'
 import { RiskEntityDrawer } from '@/components/risk/risk-entity-drawer'
+import { useAI } from '@/components/ai-provider'
 import {
   RISK_ENTITIES, computeScore, bandForScore, BAND_META,
   PROGRAMS, type RiskEntity, type RiskState,
@@ -30,6 +31,7 @@ interface Props {
 
 // R-03 Project Risk Register — ODC schema, scored & event-sourced
 export function RiskRegister({ initialProgram, initialCategory, onCapture }: Props) {
+  const { aiEnabled } = useAI()
   const [query, setQuery] = React.useState('')
   const [program, setProgram] = React.useState<string>(initialProgram ?? 'all')
   const [category, setCategory] = React.useState<string>(initialCategory ?? 'all')
@@ -110,7 +112,7 @@ export function RiskRegister({ initialProgram, initialCategory, onCapture }: Pro
                     <span className="text-[10px] font-mono text-muted-foreground">{r.id}</span>
                     <span className={cn('px-1.5 py-0.5 rounded text-[9px] font-semibold border', STATE_STYLE[r.state])}>{r.state}</span>
                     {r.kind === 'ISSUE' && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase bg-red-bg text-red border border-red/30">Issue</span>}
-                    {r.generator !== 'Manual' && <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-teal/10 text-teal border border-teal/20 inline-flex items-center gap-0.5"><Bot className="w-2.5 h-2.5" />{r.archetype}</span>}
+                    {aiEnabled && r.generator !== 'Manual' && <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-teal/10 text-teal border border-teal/20 inline-flex items-center gap-0.5"><Bot className="w-2.5 h-2.5" />{r.archetype}</span>}
                   </div>
                   <p className="text-sm font-semibold text-foreground truncate mt-0.5">{r.title}</p>
                   <p className="text-[11px] text-muted-foreground truncate">{r.project} · {r.program} · {r.category} · {r.ownerRole}</p>

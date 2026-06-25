@@ -6,17 +6,23 @@ import { cn } from '@/lib/utils'
 import { Activity, Bot, Play, ArrowUpRight, Cpu, ListChecks } from 'lucide-react'
 import { PulseIndicator, GrowBar } from '@/components/animated-primitives'
 import { Button } from '@/components/ui/button'
+import { useAI } from '@/components/ai-provider'
 import {
   RECENT_VERDICTS, TEST_QUEUE, GENERATOR_MIX,
   resultBadge, generatorMeta, CONTROL_KPIS,
 } from '@/lib/controls-data'
-import { useToast } from '@/hooks/use-toast'
+import { useActionModal } from '@/hooks/use-action-modal'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
 
 export function AutoAuditConsole() {
-  const { toast } = useToast()
+  const action = useActionModal()
+  const { aiEnabled } = useAI()
   const [ticker, setTicker] = React.useState(CONTROL_KPIS.testsToday)
+  const [sweepQueued, setSweepQueued] = React.useState(false)
+  const visibleVerdicts = aiEnabled ? RECENT_VERDICTS : RECENT_VERDICTS.filter((v) => v.generator !== 'AGENT')
+  const visibleQueue = aiEnabled ? TEST_QUEUE : TEST_QUEUE.filter((q) => q.generator !== 'AGENT')
+  const visibleGeneratorMix = aiEnabled ? GENERATOR_MIX : GENERATOR_MIX.filter((g) => g.generator !== 'AGENT')
 
   // Simulated live test counter
   React.useEffect(() => {
@@ -40,7 +46,9 @@ export function AutoAuditConsole() {
                   <PulseIndicator color="bg-green" size="w-1.5 h-1.5" /> LIVE
                 </span>
               </div>
-              <p className="text-[11px] text-muted-foreground">Continuously generating & running control tests · A-305</p>
+              <p className="text-[11px] text-muted-foreground">
+                Continuously generating & running control tests{aiEnabled ? ' · A-305' : ''}
+              </p>
             </div>
           </div>
 
@@ -60,11 +68,41 @@ export function AutoAuditConsole() {
           </div>
 
           <Button
-            onClick={() => toast({ title: 'Audit sweep queued', description: `${TEST_QUEUE.length} high-priority controls scheduled for immediate re-test.` })}
+            onClick={() =>
+              action.open({
+                tone: 'primary',
+                icon: Play,
+                title: 'Run Priority Audit Sweep',
+                description: 'Schedule immediate retests for the highest-gain controls in the queue.',
+                context: [
+                  { label: 'Queued controls', value: visibleQueue.length },
+                  { label: 'Current precision', value: `${CONTROL_KPIS.autoAuditPrecision}%` },
+                  { label: 'Tests today', value: ticker.toLocaleString() },
+                ],
+                fields: [
+                  {
+                    type: 'select',
+                    name: 'mode',
+                    label: 'Sweep mode',
+                    defaultValue: 'priority',
+                    required: true,
+                    options: [
+                      { value: 'priority', label: 'Priority only — top assurance gain' },
+                      { value: 'full', label: 'Full queue — all listed controls' },
+                      ...(aiEnabled ? [{ value: 'agent', label: 'Agent-assisted — include A-305 evidence capture' }] : []),
+                    ],
+                  },
+                ],
+                confirmLabel: 'Start Sweep',
+                successToast: 'Priority audit sweep queued',
+                successDescription: `${visibleQueue.length} controls scheduled for immediate retest.`,
+                onConfirm: () => setSweepQueued(true),
+              })
+            }
             className="shrink-0 font-semibold h-9 text-xs gap-1.5 bg-gold text-navy border border-gold"
           >
             <Play className="w-3.5 h-3.5" />
-            Run Priority Sweep
+            {sweepQueued ? 'Sweep Queued' : 'Run Priority Sweep'}
           </Button>
         </div>
       </div>
@@ -74,13 +112,14 @@ export function AutoAuditConsole() {
         <div className="lg:col-span-2 bg-card rounded-xl border border-line overflow-hidden shadow-sm flex flex-col h-full">
           <div className="px-5 py-3.5 border-b border-line flex items-center justify-between">
             <h4 className="text-sm font-semibold text-foreground flex items-center gap-2">
-              <Bot className="w-4 h-4 text-teal" /> Live Verdict Stream
+                  {aiEnabled && <Bot className="w-4 h-4 text-teal" />}
+                  Live Verdict Stream
             </h4>
             <span className="text-[10px] font-mono text-muted-foreground">auto-refresh · 15s</span>
           </div>
           <div className="divide-y divide-line flex-1 min-h-[460px] overflow-y-auto">
             <AnimatePresence initial={false}>
-              {RECENT_VERDICTS.map((v, i) => {
+              {visibleVerdicts.map((v, i) => {
                 const rb = resultBadge(v.result)
                 const gm = generatorMeta(v.generator)
                 return (
@@ -136,7 +175,7 @@ export function AutoAuditConsole() {
               <Cpu className="w-4 h-4 text-gold" /> Test Generator Mix
             </h4>
             <div className="space-y-3.5">
-              {GENERATOR_MIX.map((g, i) => {
+              {visibleGeneratorMix.map((g, i) => {
                 const gm = generatorMeta(g.generator)
                 return (
                   <div key={g.generator}>
@@ -171,7 +210,7 @@ export function AutoAuditConsole() {
               <span className="text-[10px] font-normal text-muted-foreground ml-auto">by assurance gain</span>
             </h4>
             <div className="space-y-2">
-              {TEST_QUEUE.map((q) => {
+              {visibleQueue.map((q) => {
                 const gm = generatorMeta(q.generator)
                 return (
                   <div key={q.controlId} className="flex items-center gap-2.5 p-2 rounded-lg hover:bg-secondary/40 transition-colors">
@@ -193,6 +232,7 @@ export function AutoAuditConsole() {
           </div>
         </div>
       </div>
+      {action.element}
     </div>
   )
 }

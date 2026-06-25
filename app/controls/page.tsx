@@ -12,7 +12,15 @@ import { ControlHeatmap } from '@/components/controls/control-heatmap'
 import { AutoAuditConsole } from '@/components/controls/auto-audit-console'
 import { ComplianceRegister } from '@/components/controls/compliance-register'
 import { ControlGapExplorer } from '@/components/controls/control-gap-explorer'
-import { useToast } from '@/hooks/use-toast'
+import { useActionModal } from '@/hooks/use-action-modal'
+import {
+  CONTROL_GAPS,
+  CONTROL_KPIS,
+  CONTROLS,
+  HEATMAP,
+  POLICIES,
+  RECENT_VERDICTS,
+} from '@/lib/controls-data'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
 
@@ -26,8 +34,86 @@ const tabs = [
 type TabId = (typeof tabs)[number]['id']
 
 export default function ControlsPage() {
-  const { toast } = useToast()
+  const action = useActionModal()
   const [tab, setTab] = React.useState<TabId>('posture')
+  const [alertsOn, setAlertsOn] = React.useState(false)
+  const [alertChannel, setAlertChannel] = React.useState<string>('in-app')
+  const [exportQueued, setExportQueued] = React.useState(false)
+
+  const downloadCompliancePack = (audience: string) => {
+    const generatedAt = new Date()
+    const fileDate = generatedAt.toISOString().slice(0, 10)
+    const totalGapExposure = CONTROL_GAPS.reduce((sum, gap) => sum + gap.exposureValue, 0)
+    const failedVerdicts = RECENT_VERDICTS.filter((verdict) => verdict.result === 'FAIL')
+
+    const markdown = [
+      '# Controls & Auto-Audit Evidence Pack',
+      '',
+      `Generated: ${generatedAt.toLocaleString()}`,
+      `Audience: ${audience}`,
+      '',
+      '## Portfolio Posture',
+      '',
+      `- Compliance posture: ${CONTROL_KPIS.compliancePosture}`,
+      `- Controls covered: ${CONTROL_KPIS.controlsCovered}% (${CONTROL_KPIS.totalControls} controls)`,
+      `- Auto-audit precision: ${CONTROL_KPIS.autoAuditPrecision}%`,
+      `- Open control gaps: ${CONTROL_KPIS.openGaps}`,
+      `- Gap exposure: $${CONTROL_KPIS.gapExposure}M`,
+      `- Tests today: ${CONTROL_KPIS.testsToday.toLocaleString()}`,
+      '',
+      '## Control-Health Heatmap',
+      '',
+      ...HEATMAP.map((row) => {
+        const scores = Object.entries(row.scores)
+          .map(([program, score]) => `${program}: ${score}`)
+          .join(', ')
+        return `- ${row.domain} (${row.coverage}): ${scores}`
+      }),
+      '',
+      '## Critical Control Gaps',
+      '',
+      ...CONTROL_GAPS.map((gap) =>
+        `- ${gap.controlId}: ${gap.title} | ${gap.coverageState} | ${gap.region} | ${gap.daysSinceTest}d since test | $${gap.exposureValue.toFixed(1)}M | ${gap.autoRaisedRisk ?? 'No linked risk'}`,
+      ),
+      '',
+      `Total listed gap exposure: $${totalGapExposure.toFixed(1)}M`,
+      '',
+      '## Policy Compliance',
+      '',
+      ...POLICIES.map((policy) =>
+        `- ${policy.id}: ${policy.title} | ${policy.complianceState} | ${policy.compliancePct}% | controls: ${policy.controlIds.join(', ')}`,
+      ),
+      '',
+      '## Recent Auto-Audit Verdicts',
+      '',
+      ...RECENT_VERDICTS.map((verdict) =>
+        `- ${verdict.controlId}: ${verdict.result} | ${verdict.confidence}% confidence | ${verdict.timeLabel} | ${verdict.evidence}`,
+      ),
+      '',
+      '## Control Inventory Snapshot',
+      '',
+      ...CONTROLS.map((control) =>
+        `- ${control.id}: ${control.title} | ${control.ownerRole} | ${control.lastResult} | effectiveness ${control.effectiveness}% | priority ${control.testPriority}`,
+      ),
+      '',
+      '## Failed Verdict Summary',
+      '',
+      failedVerdicts.length > 0
+        ? failedVerdicts.map((verdict) => `- ${verdict.controlId}: ${verdict.evidence}`).join('\n')
+        : '- No failed verdicts in the current stream.',
+      '',
+    ].join('\n')
+
+    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `controls-auto-audit-pack-${audience}-${fileDate}.md`
+    document.body.appendChild(link)
+    link.click()
+    link.remove()
+    URL.revokeObjectURL(url)
+  }
 
   return (
     <AppShell title="Controls & Auto-Audit" subtitle="Compliance posture, control health & continuous assurance" activeHref="/controls">
@@ -59,20 +145,94 @@ export default function ControlsPage() {
             <div className="flex items-center gap-2 shrink-0">
               <Button
                 variant="outline"
-                onClick={() => toast({ title: 'Subscribed', description: 'You will be alerted on new critical control breaks.' })}
-                className="h-9 text-xs gap-1.5 border-line hover:border-gold/40"
+                onClick={() =>
+                  action.open({
+                    tone: 'info',
+                    icon: Bell,
+                    title: alertsOn ? 'Update Alert Subscription' : 'Enable Control Alerts',
+                    description: 'Receive notifications when critical controls become stale, fail a test, or raise a risk.',
+                    context: [
+                      { label: 'Scope', value: 'Critical controls and auto-raised gaps' },
+                      { label: 'Current status', value: alertsOn ? 'Enabled' : 'Not enabled' },
+                    ],
+                    fields: [
+                      {
+                        type: 'select',
+                        name: 'channel',
+                        label: 'Notification channel',
+                        defaultValue: 'in-app',
+                        required: true,
+                        options: [
+                          { value: 'in-app', label: 'In-app alerts' },
+                          { value: 'email', label: 'Email digest' },
+                          { value: 'slack', label: 'Slack + in-app alerts' },
+                        ],
+                      },
+                    ],
+                    confirmLabel: alertsOn ? 'Update Alerts' : 'Enable Alerts',
+                    successToast: alertsOn ? 'Alert subscription updated' : 'Control alerts enabled',
+                    successDescription: 'Critical control breaks will now notify the selected channel.',
+                    onConfirm: (values) => {
+                      setAlertsOn(true)
+                      setAlertChannel(values.channel || 'in-app')
+                    },
+                  })
+                }
+                className="h-9 text-xs gap-1.5 border-line"
               >
-                <Bell className="w-3.5 h-3.5" /> Alerts
+                <Bell className="w-3.5 h-3.5" /> {alertsOn ? 'Alerts On' : 'Alerts'}
               </Button>
               <Button
-                onClick={() => toast({ title: 'Export started', description: 'Compliance posture pack is being prepared as PDF.' })}
-                className="h-9 text-xs gap-1.5 bg-gold text-navy hover:bg-gold/90 border border-gold font-semibold"
+                onClick={() =>
+                  action.open({
+                    tone: 'primary',
+                    icon: Download,
+                    title: 'Export Compliance Pack',
+                    description: 'Generate a portfolio controls pack with posture, heatmap, gaps, and audit evidence.',
+                    context: [
+                      { label: 'Sections', value: 'Posture · Auto-Audit · Compliance · Gaps' },
+                      { label: 'Format', value: 'PDF evidence pack' },
+                    ],
+                    fields: [
+                      {
+                        type: 'select',
+                        name: 'audience',
+                        label: 'Audience',
+                        defaultValue: 'leadership',
+                        required: true,
+                        options: [
+                          { value: 'leadership', label: 'Leadership summary' },
+                          { value: 'audit', label: 'Audit-ready evidence pack' },
+                          { value: 'controls', label: 'Controls team worklist' },
+                        ],
+                      },
+                    ],
+                    confirmLabel: 'Export Pack',
+                    successToast: 'Compliance pack downloaded',
+                    successDescription: 'The Markdown evidence pack has been saved through your browser downloads.',
+                    onConfirm: (values) => {
+                      downloadCompliancePack(values.audience || 'leadership')
+                      setExportQueued(true)
+                    },
+                  })
+                }
+                className="h-9 text-xs gap-1.5 bg-gold text-navy border border-gold font-semibold"
               >
-                <Download className="w-3.5 h-3.5" /> Export Pack
+                <Download className="w-3.5 h-3.5" /> {exportQueued ? 'Downloaded' : 'Export Pack'}
               </Button>
             </div>
           </div>
         </div>
+
+        {alertsOn && (
+          <div className="rounded-xl border border-teal/20 bg-teal/5 px-4 py-3 flex items-center gap-3">
+            <Bell className="w-4 h-4 text-teal shrink-0" />
+            <p className="text-[12px] text-foreground">
+              Control alerts are active via <span className="font-semibold text-teal">{alertChannel}</span>.
+              Critical failed tests, stale controls, and auto-raised gaps will be surfaced here.
+            </p>
+          </div>
+        )}
 
         {/* ── KPI Strip ── */}
         <ControlsKpiStrip />
@@ -109,7 +269,37 @@ export default function ControlsPage() {
         >
           {tab === 'posture' && (
             <>
-              <ControlHeatmap />
+              <ControlHeatmap
+                onSelectCell={(domainId, program) =>
+                  action.open({
+                    tone: 'info',
+                    icon: LayoutGrid,
+                    title: 'Control Cell Selected',
+                    description: 'Open a focused review for this control domain and program slice.',
+                    context: [
+                      { label: 'Control domain', value: domainId },
+                      { label: 'Program', value: program },
+                    ],
+                    fields: [
+                      {
+                        type: 'select',
+                        name: 'review',
+                        label: 'Next action',
+                        defaultValue: 'drilldown',
+                        required: true,
+                        options: [
+                          { value: 'drilldown', label: 'Open detailed control drilldown' },
+                          { value: 'retest', label: 'Queue auto-audit retest' },
+                          { value: 'owner', label: 'Notify control owner' },
+                        ],
+                      },
+                    ],
+                    confirmLabel: 'Continue',
+                    successToast: 'Control review action queued',
+                    successDescription: `${domainId} / ${program} has been added to the controls work queue.`,
+                  })
+                }
+              />
               <ControlGapExplorer />
             </>
           )}
@@ -117,6 +307,7 @@ export default function ControlsPage() {
           {tab === 'compliance' && <ComplianceRegister />}
           {tab === 'gaps' && <ControlGapExplorer />}
         </motion.div>
+        {action.element}
       </div>
     </AppShell>
   )

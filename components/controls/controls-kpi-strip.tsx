@@ -1,10 +1,11 @@
 'use client'
 
 import * as React from 'react'
-import { ShieldCheck, Layers, Bot, AlertOctagon, Gauge } from 'lucide-react'
+import { ShieldCheck, Layers, Bot, Activity, AlertOctagon, Gauge } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { AnimNum, FadeUp, ProgressRing } from '@/components/animated-primitives'
 import { CONTROL_KPIS } from '@/lib/controls-data'
+import { useAI } from '@/components/ai-provider'
 
 interface Kpi {
   label: string
@@ -24,11 +25,12 @@ const toneMap: Record<Kpi['tone'], { text: string; bg: string; ring: string }> =
 }
 
 export function ControlsKpiStrip() {
+  const { aiEnabled } = useAI()
   const k = CONTROL_KPIS
   const kpis: Kpi[] = [
     { label: 'Compliance Posture', value: `${k.compliancePosture}`, sub: 'criticality-weighted', icon: ShieldCheck, tone: 'amber', ring: k.compliancePosture },
     { label: 'Controls Covered', value: `${k.controlsCovered}%`, sub: `${k.totalControls} controls in scope`, icon: Layers, tone: 'teal', ring: k.controlsCovered },
-    { label: 'Auto-Audit Precision', value: `${k.autoAuditPrecision}%`, sub: `${k.testsToday.toLocaleString()} tests today`, icon: Bot, tone: 'green', ring: k.autoAuditPrecision },
+    { label: aiEnabled ? 'Auto-Audit Precision' : 'Audit Precision', value: `${k.autoAuditPrecision}%`, sub: `${k.testsToday.toLocaleString()} tests today`, icon: aiEnabled ? Bot : Activity, tone: 'green', ring: k.autoAuditPrecision },
     { label: 'Open Control Gaps', value: `${k.openGaps}`, sub: 'unverified or stale', icon: AlertOctagon, tone: 'red' },
     { label: 'Gap Exposure', value: `$${k.gapExposure}M`, sub: 'blast radius at risk', icon: Gauge, tone: 'gold' },
   ]

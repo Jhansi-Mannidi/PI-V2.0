@@ -21,6 +21,7 @@ const ARCHETYPE_ICON: Record<Archetype, React.ElementType> = {
 export function DiscoveryFeed() {
   const { toast } = useToast()
   const [dismissed, setDismissed] = React.useState<Set<string>>(new Set())
+  const [decisions, setDecisions] = React.useState<Record<string, 'accepted' | 'rejected'>>({})
   const [filter, setFilter] = React.useState<Archetype | 'all'>('all')
 
   const discovered = RISK_ENTITIES.filter(
@@ -29,7 +30,10 @@ export function DiscoveryFeed() {
   const shown = filter === 'all' ? discovered : discovered.filter((r) => r.archetype === filter)
 
   const decide = (id: string, accept: boolean) => {
-    setDismissed((prev) => new Set(prev).add(id))
+    setDecisions((prev) => ({ ...prev, [id]: accept ? 'accepted' : 'rejected' }))
+    window.setTimeout(() => {
+      setDismissed((prev) => new Set(prev).add(id))
+    }, 900)
     toast({
       title: accept ? 'Risk accepted into register' : 'Candidate rejected',
       description: accept
@@ -90,6 +94,7 @@ export function DiscoveryFeed() {
           const Icon = ARCHETYPE_ICON[r.archetype!]
           const score = computeScore(r.drivers)
           const band = bandForScore(score)
+          const decision = decisions[r.id]
           return (
             <motion.div
               key={r.id}
@@ -137,10 +142,18 @@ export function DiscoveryFeed() {
                       <span className="text-[10.5px] font-mono text-red">${r.impactCost.toFixed(1)}M{r.impactDays ? ` · ${r.impactDays}d` : ''}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <Button size="sm" variant="outline" onClick={() => decide(r.id, false)} className="h-7 text-[11px] gap-1 border-line text-muted-foreground">
+                      {decision && (
+                        <span className={cn(
+                          'h-7 inline-flex items-center px-2 rounded-md border text-[11px] font-semibold',
+                          decision === 'accepted' ? 'border-green/30 bg-green-bg text-green' : 'border-red/30 bg-red-bg text-red',
+                        )}>
+                          {decision === 'accepted' ? 'Accepted' : 'Rejected'}
+                        </span>
+                      )}
+                      <Button size="sm" variant="outline" disabled={!!decision} onClick={() => decide(r.id, false)} className="h-7 text-[11px] gap-1 border-line text-muted-foreground">
                         <X className="w-3 h-3" /> Reject
                       </Button>
-                      <Button size="sm" onClick={() => decide(r.id, true)} className="h-7 text-[11px] gap-1 bg-gold text-navy font-semibold">
+                      <Button size="sm" disabled={!!decision} onClick={() => decide(r.id, true)} className="h-7 text-[11px] gap-1 bg-gold text-navy font-semibold">
                         <Check className="w-3 h-3" /> Accept into register
                       </Button>
                     </div>

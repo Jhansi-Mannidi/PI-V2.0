@@ -6,13 +6,14 @@ import {
   Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription,
 } from '@/components/ui/sheet'
 import { Button } from '@/components/ui/button'
-import { useToast } from '@/hooks/use-toast'
+import { useActionModal } from '@/hooks/use-action-modal'
+import { useAI } from '@/components/ai-provider'
 import {
   Bot, DollarSign, CalendarClock, Users, FileSearch, ArrowUpRight,
   ShieldCheck, Shuffle, Ban, CircleCheck, Activity, Dot,
 } from 'lucide-react'
 import {
-  type RiskEntity, computeScore, bandForScore, BAND_META, DRIVER_WEIGHTS,
+  type RiskEntity, type RiskEvent, computeScore, bandForScore, BAND_META, DRIVER_WEIGHTS,
   RISK_STATES, RESPONSE_META, PI_MATRIX, type ResponseStrategy, type ScoreBand,
 } from '@/lib/risk-data'
 
@@ -30,16 +31,167 @@ const DRIVER_LABELS: { key: keyof typeof DRIVER_WEIGHTS; label: string }[] = [
 const matrixBandColor = (b: ScoreBand) => BAND_META[b].cell
 
 export function RiskEntityDrawer({ entity, onClose }: { entity: RiskEntity | null; onClose: () => void }) {
-  const { toast } = useToast()
+  const action = useActionModal()
+  const { aiEnabled } = useAI()
+  const [localState, setLocalState] = React.useState<RiskEntity['state'] | null>(null)
+  const [localKind, setLocalKind] = React.useState<RiskEntity['kind'] | null>(null)
+  const [localResponse, setLocalResponse] = React.useState<ResponseStrategy | null>(null)
+  const [localEvents, setLocalEvents] = React.useState<RiskEntity['events']>([])
+  const [mitigationQueued, setMitigationQueued] = React.useState(false)
+
+  React.useEffect(() => {
+    setLocalState(null)
+    setLocalKind(null)
+    setLocalResponse(null)
+    setLocalEvents([])
+    setMitigationQueued(false)
+  }, [entity?.id])
+
   if (!entity) return null
 
   const score = computeScore(entity.drivers)
   const band = bandForScore(score)
-  const stateIndex = RISK_STATES.findIndex((s) => s.id === entity.state)
+  const displayState = localState ?? entity.state
+  const displayKind = localKind ?? entity.kind
+  const displayResponse = localResponse ?? entity.response
+  const displayEvents = [...localEvents, ...entity.events]
+  const stateIndex = RISK_STATES.findIndex((s) => s.id === displayState)
 
-  const act = (msg: string, desc: string) => toast({ title: msg, description: desc })
+  const appendEvent = (type: RiskEvent['type'], detail: string, actor = 'Portfolio risk console') => {
+    setLocalEvents((prev) => [
+      {
+        type,
+        at: 'now',
+        detail,
+        actor,
+      },
+      ...prev,
+    ])
+  }
+
+  const openResponseAction = (response: ResponseStrategy) => {
+    const meta = RESPONSE_META[response]
+    const Icon = RESPONSE_ICON[response] as React.ComponentType<{ className?: string }>
+
+    action.open({
+      tone: response === 'Avoid' ? 'destructive' : response === 'Accept' ? 'warning' : 'primary',
+      icon: Icon,
+      title: `${response} response — ${entity.id}`,
+      description: `${meta.action} This action is assigned to a service role, not an individual.`,
+      context: [
+        { label: 'Risk', value: entity.title },
+        { label: 'Owner role', value: entity.ownerRole },
+        { label: 'Current response', value: displayResponse },
+        { label: 'Selected response', value: response },
+      ],
+      fields: [
+        {
+          type: 'textarea',
+          name: 'note',
+          label: 'Decision note',
+          placeholder: `Why is ${response.toLowerCase()} the right response?`,
+          defaultValue: meta.when,
+          rows: 3,
+          required: true,
+        },
+      ],
+      confirmLabel: `Set ${response}`,
+      successToast: `${response} response selected`,
+      successDescription: `${entity.id} updated and event log appended.`,
+      onConfirm: (values) => {
+        setLocalResponse(response)
+        appendEvent(response === 'Accept' ? 'ACCEPTED' : 'MITIGATING', `${response} selected — ${values.note}`)
+      },
+    })
+  }
+
+  const openMaterialiseAction = () => {
+    action.open({
+      tone: 'destructive',
+      icon: ArrowUpRight,
+      title: `Mark materialised — ${entity.id}`,
+      description: 'Convert this risk into an issue while preserving its full risk history.',
+      context: [
+        { label: 'Risk', value: entity.title },
+        { label: 'Current state', value: displayState },
+        { label: 'Exposure', value: `$${entity.impactCost.toFixed(1)}M / ${entity.impactDays}d` },
+        { label: 'Owner role', value: entity.ownerRole },
+      ],
+      fields: [
+        {
+          type: 'textarea',
+          name: 'evidence',
+          label: 'Materialisation evidence',
+          placeholder: 'Summarize the event or signal that confirms this risk has materialised.',
+          rows: 3,
+          required: true,
+        },
+      ],
+      confirmLabel: 'Mark materialised',
+      successToast: 'Risk marked as materialised',
+      successDescription: `${entity.id} is now tracked as an issue with its prior history retained.`,
+      onConfirm: (values) => {
+        setLocalKind('ISSUE')
+        setLocalState('Materialised')
+        appendEvent('MATERIALISED', values.evidence)
+      },
+    })
+  }
+
+  const openMitigationAction = () => {
+    action.open({
+      tone: 'primary',
+      icon: ShieldCheck,
+      title: `Open mitigation task — ${entity.id}`,
+      description: 'Create an owner-facing mitigation task from this risk record.',
+      context: [
+        { label: 'Risk', value: entity.title },
+        { label: 'Owner role', value: entity.ownerRole },
+        { label: 'Target date', value: entity.targetDate },
+        { label: 'Response', value: displayResponse },
+      ],
+      fields: [
+        {
+          type: 'select',
+          name: 'priority',
+          label: 'Task priority',
+          defaultValue: score >= 75 ? 'critical' : 'high',
+          options: [
+            { value: 'critical', label: 'Critical', description: 'Immediate owner action required' },
+            { value: 'high', label: 'High', description: 'Prioritize in the current work cycle' },
+            { value: 'standard', label: 'Standard', description: 'Track in normal mitigation cadence' },
+          ],
+          required: true,
+        },
+        {
+          type: 'input',
+          inputType: 'date',
+          name: 'dueDate',
+          label: 'Due date',
+          defaultValue: entity.targetDate,
+          required: true,
+        },
+        {
+          type: 'textarea',
+          name: 'task',
+          label: 'Mitigation task',
+          defaultValue: entity.mitigation,
+          rows: 3,
+          required: true,
+        },
+      ],
+      confirmLabel: 'Create task',
+      successToast: 'Mitigation task opened',
+      successDescription: `${entity.ownerRole} now owns the mitigation workflow.`,
+      onConfirm: (values) => {
+        setMitigationQueued(true)
+        appendEvent('MITIGATING', `${values.priority.toUpperCase()} mitigation task due ${values.dueDate}: ${values.task}`)
+      },
+    })
+  }
 
   return (
+    <>
     <Sheet open={!!entity} onOpenChange={(o) => !o && onClose()}>
       <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto p-0">
         {/* Header */}
@@ -47,12 +199,12 @@ export function RiskEntityDrawer({ entity, onClose }: { entity: RiskEntity | nul
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-[10px] font-mono text-muted-foreground">{entity.id}</span>
             <span className={cn('px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border',
-              entity.kind === 'ISSUE' ? 'bg-red-bg text-red border-red/30' : entity.kind === 'AUDIT' ? 'bg-gold-pale text-gold border-gold/30' : 'bg-secondary text-muted-foreground border-line')}>
-              {entity.kind}
+              displayKind === 'ISSUE' ? 'bg-red-bg text-red border-red/30' : displayKind === 'AUDIT' ? 'bg-gold-pale text-gold border-gold/30' : 'bg-secondary text-muted-foreground border-line')}>
+              {displayKind}
             </span>
             <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold bg-secondary text-muted-foreground border border-line">{entity.category}</span>
             <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-secondary text-muted-foreground border border-line">{entity.project} · {entity.program}</span>
-            {entity.generator !== 'Manual' && (
+            {aiEnabled && entity.generator !== 'Manual' && (
               <span className="px-1.5 py-0.5 rounded text-[9px] font-mono bg-teal/10 text-teal border border-teal/20 inline-flex items-center gap-1">
                 <Bot className="w-2.5 h-2.5" /> {entity.generator}
               </span>
@@ -138,7 +290,7 @@ export function RiskEntityDrawer({ entity, onClose }: { entity: RiskEntity | nul
           </div>
 
           {/* Reasoning trace */}
-          {entity.reasoning && (
+          {aiEnabled && entity.reasoning && (
             <div className="bg-teal/5 rounded-lg p-3 border border-teal/10">
               <div className="flex items-center gap-1.5 mb-1.5">
                 <Bot className="w-3.5 h-3.5 text-teal" />
@@ -161,7 +313,7 @@ export function RiskEntityDrawer({ entity, onClose }: { entity: RiskEntity | nul
             <div className="flex items-center gap-1 flex-wrap">
               {RISK_STATES.slice(0, 6).map((s, i) => {
                 const reached = i <= stateIndex && stateIndex < 5
-                const isCurrent = s.id === entity.state
+                const isCurrent = s.id === displayState
                 return (
                   <React.Fragment key={s.id}>
                     <span className={cn('px-2 py-1 rounded-md text-[10px] font-semibold whitespace-nowrap',
@@ -179,7 +331,7 @@ export function RiskEntityDrawer({ entity, onClose }: { entity: RiskEntity | nul
           <div>
             <h4 className="text-[11px] uppercase tracking-wider text-muted-foreground font-semibold mb-2">Event log</h4>
             <div className="space-y-0">
-              {entity.events.map((ev, i) => (
+              {displayEvents.map((ev, i) => (
                 <div key={i} className="flex gap-3 pb-3 last:pb-0 relative">
                   {i < entity.events.length - 1 && <span className="absolute left-[7px] top-4 bottom-0 w-px bg-line" />}
                   <div className="w-3.5 h-3.5 rounded-full bg-gold/20 border-2 border-gold flex items-center justify-center shrink-0 mt-0.5 z-10" />
@@ -211,11 +363,11 @@ export function RiskEntityDrawer({ entity, onClose }: { entity: RiskEntity | nul
             <div className="grid grid-cols-2 gap-2">
               {(Object.keys(RESPONSE_META) as ResponseStrategy[]).map((r) => {
                 const Icon = RESPONSE_ICON[r]
-                const active = entity.response === r
+                const active = displayResponse === r
                 return (
                   <button
                     key={r}
-                    onClick={() => act(`${r} selected`, `${RESPONSE_META[r].action} Task opens on a Service Role, never an individual.`)}
+                    onClick={() => openResponseAction(r)}
                     className={cn('flex items-start gap-2 p-2.5 rounded-lg border text-left transition-all',
                       active ? 'border-gold bg-gold-pale' : 'border-line hover:border-gold/40 bg-card')}
                   >
@@ -233,23 +385,25 @@ export function RiskEntityDrawer({ entity, onClose }: { entity: RiskEntity | nul
 
         {/* Sticky footer actions */}
         <div className="sticky bottom-0 bg-card border-t border-line px-5 py-3 flex items-center gap-2">
-          {entity.kind === 'RISK' && entity.state !== 'Materialised' && (
+          {displayKind === 'RISK' && displayState !== 'Materialised' && (
             <Button
               variant="outline"
-              onClick={() => act('Marked as materialised', `${entity.id} → ISSUE. Pre-history retained; corrective-action plan pre-filled from mitigations.`)}
+              onClick={openMaterialiseAction}
               className="flex-1 h-9 text-xs gap-1.5 border-red/30 text-red"
             >
               <ArrowUpRight className="w-3.5 h-3.5" /> Mark materialised
             </Button>
           )}
           <Button
-            onClick={() => act('Action queued', `Workflow Task opened on ${entity.ownerRole}. Outcome Subscriber will measure actual vs predicted.`)}
+            onClick={openMitigationAction}
             className="flex-1 h-9 text-xs gap-1.5 bg-gold text-navy font-semibold"
           >
-            <ShieldCheck className="w-3.5 h-3.5" /> Open mitigation task
+            <ShieldCheck className="w-3.5 h-3.5" /> {mitigationQueued ? 'Mitigation queued' : 'Open mitigation task'}
           </Button>
         </div>
       </SheetContent>
     </Sheet>
+    {action.element}
+    </>
   )
 }

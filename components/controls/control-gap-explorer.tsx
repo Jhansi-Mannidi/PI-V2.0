@@ -6,12 +6,13 @@ import { cn } from '@/lib/utils'
 import { AlertOctagon, ArrowUpRight, Play, ShieldAlert } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { CONTROL_GAPS, coverageBadge } from '@/lib/controls-data'
-import { useToast } from '@/hooks/use-toast'
+import { useActionModal } from '@/hooks/use-action-modal'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
 
 export function ControlGapExplorer() {
-  const { toast } = useToast()
+  const action = useActionModal()
+  const [queuedTests, setQueuedTests] = React.useState<Set<string>>(new Set())
   const sorted = [...CONTROL_GAPS].sort((a, b) => b.exposureValue - a.exposureValue)
   const totalExposure = sorted.reduce((s, g) => s + g.exposureValue, 0)
 
@@ -79,10 +80,43 @@ export function ControlGapExplorer() {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => toast({ title: 'Re-test queued', description: `${g.controlId} scheduled for immediate auto-audit.` })}
-                  className="shrink-0 h-8 text-[11px] gap-1 border-line hover:border-gold/40 hover:text-gold"
+                  onClick={() =>
+                    action.open({
+                      tone: 'warning',
+                      icon: Play,
+                      title: `Queue control retest — ${g.controlId}`,
+                      description: 'Schedule an immediate auto-audit retest and notify the owning service role.',
+                      context: [
+                        { label: 'Control', value: g.title },
+                        { label: 'Region', value: g.region },
+                        { label: 'Exposure', value: `$${g.exposureValue.toFixed(1)}M` },
+                        { label: 'Last tested', value: `${g.daysSinceTest}d ago` },
+                      ],
+                      fields: [
+                        {
+                          type: 'select',
+                          name: 'priority',
+                          label: 'Retest priority',
+                          defaultValue: g.exposureValue >= 1 ? 'critical' : 'high',
+                          required: true,
+                          options: [
+                            { value: 'critical', label: 'Critical — run now' },
+                            { value: 'high', label: 'High — next audit slot' },
+                            { value: 'standard', label: 'Standard — scheduled sweep' },
+                          ],
+                        },
+                      ],
+                      confirmLabel: 'Queue Retest',
+                      successToast: `${g.controlId} retest queued`,
+                      successDescription: 'Auto-audit engine will refresh the control evidence.',
+                      onConfirm: () => {
+                        setQueuedTests((prev) => new Set(prev).add(g.controlId))
+                      },
+                    })
+                  }
+                  className="shrink-0 h-8 text-[11px] gap-1 border-line"
                 >
-                  <Play className="w-3 h-3" /> Test
+                  <Play className="w-3 h-3" /> {queuedTests.has(g.controlId) ? 'Queued' : 'Test'}
                 </Button>
               </div>
             </motion.div>
@@ -96,6 +130,7 @@ export function ControlGapExplorer() {
           Stale critical controls auto-raise a risk in the Risk module — closing the controls → risk loop without manual triage.
         </p>
       </div>
+      {action.element}
     </div>
   )
 }
