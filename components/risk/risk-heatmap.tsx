@@ -22,7 +22,7 @@ interface Props {
 
 // R-01 Portfolio Risk Heatmap + R-02 Program drill (§8.2 / §8.3)
 export function RiskHeatmap({ onCellSelect }: Props) {
-  const [expanded, setExpanded] = React.useState<string | null>('NA-West')
+  const [expanded, setExpanded] = React.useState<string | null>(null)
 
   return (
     <div className="bg-card rounded-xl border border-line overflow-hidden shadow-sm">
