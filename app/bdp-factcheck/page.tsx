@@ -371,7 +371,7 @@ export default function BDPFactCheckPage() {
         <section className="bg-card rounded-xl border border-line overflow-hidden">
           <header className="flex items-center justify-between px-5 py-3 border-b border-line">
             <div>
-              <h2 className="text-sm font-semibold text-foreground">Active BDP Conflicts</h2>
+              <h2 className="text-sm font-semibold text-foreground">Active BDP Conflict</h2>
               <p className="text-[11px] text-muted-foreground">
                 {filtered.length} of {conflicts.length} • A-205 BDP Reconciler agent monitors continuously
               </p>
