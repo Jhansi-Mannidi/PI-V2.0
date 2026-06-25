@@ -2,6 +2,7 @@
 
 // Inspired by react-hot-toast library
 import * as React from 'react'
+import { toast as sonnerToast } from 'sonner'
 
 import type { ToastActionElement, ToastProps } from '@/components/ui/toast'
 
@@ -160,6 +161,17 @@ function toast({ ...props }: Toast) {
       },
     },
   })
+
+  const message = props.title ?? 'Notification'
+  const options = {
+    description: props.description,
+  }
+
+  if (props.variant === 'destructive') {
+    sonnerToast.error(message, options)
+  } else {
+    sonnerToast.success(message, options)
+  }
 
   return {
     id: id,

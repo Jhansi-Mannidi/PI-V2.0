@@ -191,12 +191,10 @@ export function ActionModal({
     try {
       // Simulate realistic round-trip if no handler provided
       await Promise.resolve(onConfirm?.(values) ?? new Promise((r) => setTimeout(r, 700)))
-      if (successToast) {
-        toast.success(successToast, {
-          description: successDescription,
-          icon: <ToastIcon className="w-4 h-4" />,
-        })
-      }
+      toast.success(successToast ?? `${confirmLabel} completed`, {
+        description: successDescription ?? title,
+        icon: <ToastIcon className="w-4 h-4" />,
+      })
       onOpenChange(false)
     } catch (err) {
       toast.error('Action failed', {

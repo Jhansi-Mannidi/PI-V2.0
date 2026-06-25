@@ -22,14 +22,14 @@ const Toaster = ({ ...props }: ToasterProps) => {
           success: 'group-[.toaster]:!bg-[#E7F5EC] group-[.toaster]:dark:!bg-emerald-950/80 group-[.toaster]:!border-emerald-200 group-[.toaster]:dark:!border-emerald-800/50 group-[.toaster]:!text-emerald-800 group-[.toaster]:dark:!text-emerald-200',
           error: 'group-[.toaster]:!bg-[#FBE9E9] group-[.toaster]:dark:!bg-rose-950/80 group-[.toaster]:!border-rose-200 group-[.toaster]:dark:!border-rose-800/50 group-[.toaster]:!text-rose-800 group-[.toaster]:dark:!text-rose-200',
           warning: 'group-[.toaster]:!bg-[#FBF1E6] group-[.toaster]:dark:!bg-amber-950/80 group-[.toaster]:!border-amber-200 group-[.toaster]:dark:!border-amber-800/50 group-[.toaster]:!text-amber-800 group-[.toaster]:dark:!text-amber-200',
-          info: 'group-[.toaster]:!bg-blue-50 group-[.toaster]:dark:!bg-blue-950/80 group-[.toaster]:!border-blue-200 group-[.toaster]:dark:!border-blue-800/50 group-[.toaster]:!text-blue-800 group-[.toaster]:dark:!text-blue-200',
+          info: 'group-[.toaster]:!bg-teal-soft group-[.toaster]:dark:!bg-teal-950/80 group-[.toaster]:!border-teal/20 group-[.toaster]:dark:!border-teal/40 group-[.toaster]:!text-teal group-[.toaster]:dark:!text-teal',
         },
       }}
       icons={{
         success: <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />,
         error: <AlertCircle className="h-5 w-5 text-rose-600 dark:text-rose-400" />,
         warning: <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400" />,
-        info: <Info className="h-5 w-5 text-blue-600 dark:text-blue-400" />,
+        info: <Info className="h-5 w-5 text-teal" />,
         loading: <Loader2 className="h-5 w-5 text-muted-foreground animate-spin" />,
       }}
       style={
