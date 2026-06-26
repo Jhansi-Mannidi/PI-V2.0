@@ -1,21 +1,19 @@
 'use client'
 
 import * as React from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import { motion, AnimatePresence } from 'framer-motion'
 import { X } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 /**
- * PagePanel — a full-height slide-over panel that mounts inside the
- * main content column (NOT as a Dialog/portal overlay). This keeps the
- * sidebar and topbar fully visible at all times, exactly matching the
- * design shown in the mockup.
+ * PagePanel — slides in from the right edge of the viewport, below the
+ * topbar. The sidebar and header remain fully visible at all times.
  *
- * Usage:
- *   <PagePanel open={open} onClose={() => setOpen(false)} title="New Risk Entry" description="…">
- *     {children}
- *   </PagePanel>
+ * Layout:
+ *  - Scrim covers: left-0 lg:left-[264px], top-12 sm:top-14, bottom-0
+ *  - Panel: fixed right-0, top-12 sm:top-14, bottom-0, w-[520px] max
+ *  - Portals to document.body so it's above the page scroll container
  */
 export interface PagePanelProps {
   open: boolean
@@ -23,10 +21,9 @@ export interface PagePanelProps {
   title: string
   description?: string
   children: React.ReactNode
-  /** Footer content (action buttons). Rendered in the sticky footer bar. */
   footer?: React.ReactNode
-  /** Width class, default 'max-w-[560px]' */
-  widthClass?: string
+  /** Width — defaults to 520px on desktop, full width on mobile */
+  width?: number
 }
 
 export function PagePanel({
@@ -36,52 +33,58 @@ export function PagePanel({
   description,
   children,
   footer,
-  widthClass = 'max-w-[560px]',
+  width = 520,
 }: PagePanelProps) {
   const [mounted, setMounted] = React.useState(false)
 
-  React.useEffect(() => {
-    setMounted(true)
-  }, [])
+  React.useEffect(() => { setMounted(true) }, [])
 
-  // Lock body scroll when open
+  // Prevent body scroll while open
   React.useEffect(() => {
-    if (!open) return
-    // Find the main scroll container and lock it
-    const main = document.querySelector('main')
-    if (main) {
-      main.style.overflow = 'hidden'
-      return () => { main.style.overflow = '' }
+    if (open) {
+      document.body.style.overflow = 'hidden'
+    } else {
+      document.body.style.overflow = ''
     }
+    return () => { document.body.style.overflow = '' }
   }, [open])
 
   // Close on Escape
   React.useEffect(() => {
     if (!open) return
-    const handler = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose() }
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [open, onClose])
 
   if (!mounted) return null
 
-  // Mount inside the main content element so the sidebar/header stay visible
-  const container = document.querySelector('main') ?? document.body
-
   return createPortal(
     <AnimatePresence>
       {open && (
         <>
-          {/* Scrim — only covers the main content area */}
+          {/* Scrim — only covers the content area (not sidebar, not topbar) */}
           <motion.div
             key="scrim"
-            className="absolute inset-0 z-40 bg-background/60 backdrop-blur-[2px]"
+            aria-hidden="true"
+            className={cn(
+              'fixed z-40',
+              // Top: below topbar
+              'top-12 sm:top-14',
+              // Bottom: full
+              'bottom-0',
+              // Left: starts after sidebar on desktop, full on mobile
+              'left-0 lg:left-[264px]',
+              'right-0',
+              'bg-foreground/20 backdrop-blur-[2px]',
+            )}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.18 }}
             onClick={onClose}
-            aria-hidden="true"
           />
 
           {/* Panel */}
@@ -89,27 +92,33 @@ export function PagePanel({
             key="panel"
             role="dialog"
             aria-modal="true"
-            aria-label={title}
+            aria-labelledby="page-panel-title"
+            style={{ width: `min(${width}px, 100vw)` }}
             className={cn(
-              'absolute inset-y-0 right-0 z-50 flex flex-col w-full bg-card border-l border-line shadow-2xl overflow-hidden',
-              widthClass,
+              'fixed z-50 flex flex-col',
+              // Positioned below topbar, flush to right and bottom
+              'top-12 sm:top-14 right-0 bottom-0',
+              'bg-card border-l border-line shadow-2xl',
             )}
             initial={{ x: '100%' }}
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
-            transition={{ type: 'spring', damping: 28, stiffness: 240 }}
+            transition={{ type: 'spring', damping: 30, stiffness: 260, mass: 0.8 }}
           >
-            {/* Header */}
-            <div className="flex items-start gap-3 px-5 sm:px-6 py-4 sm:py-5 border-b border-line bg-card shrink-0">
+            {/* Panel header */}
+            <div className="flex items-start gap-3 px-5 sm:px-6 py-4 border-b border-line bg-card shrink-0">
               <button
                 onClick={onClose}
-                className="mt-0.5 shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-secondary hover:bg-secondary/80 text-muted-foreground transition-colors"
+                className="mt-0.5 shrink-0 w-7 h-7 flex items-center justify-center rounded-lg bg-secondary hover:bg-line text-muted-foreground transition-colors"
                 aria-label="Close panel"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
               <div className="min-w-0 flex-1">
-                <h2 className="text-sm font-semibold text-foreground leading-snug tracking-[-0.01em]">
+                <h2
+                  id="page-panel-title"
+                  className="text-sm font-semibold text-foreground leading-snug tracking-[-0.01em]"
+                >
                   {title}
                 </h2>
                 {description && (
@@ -135,6 +144,6 @@ export function PagePanel({
         </>
       )}
     </AnimatePresence>,
-    container,
+    document.body,
   )
 }
