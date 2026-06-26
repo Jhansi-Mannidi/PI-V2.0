@@ -23,6 +23,10 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog'
 
+// Re-export LiveCommandPanel so app/page.tsx can import it from a single
+// already-compiled module (works around Turbopack persistent cache issue)
+export { LiveCommandPanel } from '@/components/live-command-panel'
+
 /* ════════════════════════════════════════════════════════════════════════════
    1. VARIANCE CONTEXT CARD - Data vs Human narrative
    ════════════════════════════════════════════════════════════════════════════ */
