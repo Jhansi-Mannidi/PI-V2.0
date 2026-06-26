@@ -102,6 +102,7 @@ export default function RiskAuditPage() {
           accentColor="text-red"
           accentBg="bg-red"
           accentBorder="border-red"
+          schedulePageHref="/risk-audit/schedule"
           schedules={RISK_AUDIT_SCHEDULES}
           occurrences={RISK_AUDIT_OCCURRENCES}
           kpis={kpiData}

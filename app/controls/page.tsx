@@ -83,6 +83,7 @@ function ControlsAuditPanel() {
       accentColor="text-gold"
       accentBg="bg-gold"
       accentBorder="border-gold"
+      schedulePageHref="/controls-audit/schedule"
       schedules={CONTROLS_AUDIT_SCHEDULES}
       occurrences={CONTROLS_AUDIT_OCCURRENCES}
       kpis={[

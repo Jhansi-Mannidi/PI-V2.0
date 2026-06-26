@@ -157,6 +157,7 @@ export default function ComplianceAuditPage() {
           accentColor="text-teal"
           accentBg="bg-teal"
           accentBorder="border-teal"
+          schedulePageHref="/compliance-audit/schedule"
           schedules={COMPLIANCE_AUDIT_SCHEDULES}
           occurrences={COMPLIANCE_AUDIT_OCCURRENCES}
           kpis={kpiData}

@@ -9,7 +9,6 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { FadeUp } from '@/components/animated-primitives'
-import { AuditSchedulerModal } from '@/components/governance/audit-scheduler-modal'
 import { OccurrenceDetail } from '@/components/governance/occurrence-detail'
 import {
   type AuditSchedule, type AuditOccurrence, type AuditType,
@@ -36,24 +35,25 @@ interface AuditShellProps {
   schedules: AuditSchedule[]
   occurrences: AuditOccurrence[]
   kpis: KPI[]
+  schedulePageHref: string // Path to schedule page, e.g. "/controls-audit/schedule"
   currentUserRole?: string
   renderScheduleExtra?: (s: AuditSchedule) => React.ReactNode
   extraContent?: React.ReactNode
 }
 
-function SchedulesTab({ schedules, type, renderExtra }: { schedules: AuditSchedule[]; type: AuditType; renderExtra?: (s: AuditSchedule) => React.ReactNode }) {
-  const [modalOpen, setModalOpen] = React.useState(false)
+function SchedulesTab({ schedules, type, renderExtra, schedulePageHref }: { schedules: AuditSchedule[]; type: AuditType; renderExtra?: (s: AuditSchedule) => React.ReactNode; schedulePageHref: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <p className="text-[12px] text-muted-foreground">{schedules.length} active schedule{schedules.length !== 1 ? 's' : ''}</p>
-        <Button
-          size="sm"
-          className="h-9 text-[12px] bg-gold text-navy border border-gold font-semibold gap-1.5"
-          onClick={() => setModalOpen(true)}
-        >
-          <Plus className="w-3.5 h-3.5" />New Audit Schedule
-        </Button>
+        <Link href={schedulePageHref}>
+          <Button
+            size="sm"
+            className="h-9 text-[12px] bg-gold text-navy border border-gold font-semibold gap-1.5"
+          >
+            <Plus className="w-3.5 h-3.5" />New Audit Schedule
+          </Button>
+        </Link>
       </div>
       <div className="bg-card rounded-xl border border-line overflow-hidden shadow-sm">
         <div className="overflow-x-auto">
@@ -109,13 +109,6 @@ function SchedulesTab({ schedules, type, renderExtra }: { schedules: AuditSchedu
           </table>
         </div>
       </div>
-      {modalOpen && (
-        <AuditSchedulerModal
-          type={type}
-          onClose={() => setModalOpen(false)}
-          onSave={() => setModalOpen(false)}
-        />
-      )}
     </div>
   )
 }
@@ -335,7 +328,7 @@ function CalendarTab({ occurrences }: { occurrences: AuditOccurrence[] }) {
 }
 
 export function AuditShell({
-  type, accentColor, accentBg, schedules, occurrences, kpis, currentUserRole, renderScheduleExtra, extraContent,
+  type, accentColor, accentBg, schedules, occurrences, kpis, schedulePageHref, currentUserRole, renderScheduleExtra, extraContent,
 }: AuditShellProps) {
   const [tab, setTab] = React.useState<'schedules' | 'occurrences' | 'calendar'>('schedules')
   const tabs = [
@@ -403,7 +396,7 @@ export function AuditShell({
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, ease }}
       >
-        {tab === 'schedules' && <SchedulesTab schedules={schedules} type={type} renderExtra={renderScheduleExtra} />}
+        {tab === 'schedules' && <SchedulesTab schedules={schedules} type={type} renderExtra={renderScheduleExtra} schedulePageHref={schedulePageHref} />}
         {tab === 'occurrences' && <OccurrencesTab occurrences={occurrences} currentUserRole={currentUserRole} />}
         {tab === 'calendar' && <CalendarTab occurrences={occurrences} />}
       </motion.div>
