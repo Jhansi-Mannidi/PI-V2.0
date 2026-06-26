@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
 import { Button } from '@/components/ui/button'
@@ -21,7 +22,6 @@ import { IssueBoard } from '@/components/risk/issue-board'
 import { AuditConsole } from '@/components/risk/audit-console'
 import { ImpactExplorer } from '@/components/risk/impact-explorer'
 import { RiskHorizonContent } from '@/components/risk/risk-horizon-content'
-import { RiskCaptureForm } from '@/components/risk/risk-capture-form'
 import { useAI } from '@/components/ai-provider'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
@@ -40,7 +40,6 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutGrid }[] = [
 export default function RiskManagementPage() {
   const { aiEnabled } = useAI()
   const [tab, setTab] = useState<TabId>('overview')
-  const [captureOpen, setCaptureOpen] = useState(false)
   const [registerProgram, setRegisterProgram] = useState<string | null>(null)
   const [registerCategory, setRegisterCategory] = useState<string | null>(null)
 
@@ -77,10 +76,12 @@ export default function RiskManagementPage() {
               )
             })}
           </div>
-          <Button onClick={() => setCaptureOpen(true)} size="sm" className="gap-1.5 shrink-0 self-start bg-gold text-navy font-semibold">
-            <Plus className="h-3.5 w-3.5" />
-            Capture Risk
-          </Button>
+          <Link href="/risk/capture">
+            <Button size="sm" className="gap-1.5 shrink-0 self-start bg-gold text-navy font-semibold">
+              <Plus className="h-3.5 w-3.5" />
+              Capture Risk
+            </Button>
+          </Link>
         </div>
 
         <AnimatePresence mode="wait">
@@ -103,7 +104,6 @@ export default function RiskManagementPage() {
               <RiskRegister
                 initialProgram={registerProgram}
                 initialCategory={registerCategory}
-                onCapture={() => setCaptureOpen(true)}
               />
             )}
             {tab === 'issues' && <IssueBoard />}
@@ -112,8 +112,6 @@ export default function RiskManagementPage() {
           </motion.div>
         </AnimatePresence>
       </div>
-
-      <RiskCaptureForm open={captureOpen} onClose={() => setCaptureOpen(false)} />
     </AppShell>
   )
 }
