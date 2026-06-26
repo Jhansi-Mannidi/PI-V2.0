@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { toast } from 'sonner'
 import {
   AlertTriangle,
@@ -15,6 +15,12 @@ import {
   Loader2,
   Sparkles,
   ChevronRight,
+  Clock,
+  Shield,
+  Zap,
+  ArrowRight,
+  BookOpen,
+  Activity,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Textarea } from '@/components/ui/textarea'
@@ -75,7 +81,6 @@ export interface ActionModalProps {
   successToast?: string
   successDescription?: string
   onConfirm?: (values: Record<string, string>) => void | Promise<void>
-  /** unused — kept for API compat */
   widthClass?: string
 }
 
@@ -83,58 +88,87 @@ export interface ActionModalProps {
 const toneConfig: Record<ActionTone, {
   bg: string; border: string; icon: string; badge: string
   button: string; pillBg: string; pillText: string
-  glow: string
+  glow: string; accent: string; barBg: string; stepColor: string
+  heroGradient: string
 }> = {
   primary: {
-    bg: 'bg-navy/6 dark:bg-gold/8',
-    border: 'border-navy/15 dark:border-gold/20',
+    bg: 'bg-navy/5 dark:bg-gold/8',
+    border: 'border-navy/12 dark:border-gold/20',
     icon: 'text-navy dark:text-gold',
     badge: 'bg-navy/10 dark:bg-gold/15',
     button: 'bg-navy hover:bg-navy/90 text-white dark:bg-gold dark:hover:bg-gold/90 dark:text-navy',
-    pillBg: 'bg-navy/8 dark:bg-gold/10',
+    pillBg: 'bg-navy/6 dark:bg-gold/10',
     pillText: 'text-navy dark:text-gold',
-    glow: 'shadow-[0_0_0_4px_rgba(11,31,58,0.08)] dark:shadow-[0_0_0_4px_rgba(212,160,76,0.12)]',
+    glow: 'ring-2 ring-navy/10 dark:ring-gold/15',
+    accent: 'bg-navy dark:bg-gold',
+    barBg: 'bg-navy/8 dark:bg-gold/10',
+    stepColor: 'text-navy dark:text-gold',
+    heroGradient: 'from-navy/4 via-navy/2 to-transparent dark:from-gold/6 dark:via-gold/3',
   },
   success: {
-    bg: 'bg-green/6',
-    border: 'border-green/20',
+    bg: 'bg-green/5',
+    border: 'border-green/18',
     icon: 'text-green',
     badge: 'bg-green/10',
     button: 'bg-green hover:bg-green/90 text-white',
-    pillBg: 'bg-green/8',
+    pillBg: 'bg-green/7',
     pillText: 'text-green',
-    glow: 'shadow-[0_0_0_4px_rgba(22,163,74,0.1)]',
+    glow: 'ring-2 ring-green/12',
+    accent: 'bg-green',
+    barBg: 'bg-green/8',
+    stepColor: 'text-green',
+    heroGradient: 'from-green/5 via-green/2 to-transparent',
   },
   warning: {
-    bg: 'bg-amber/6',
-    border: 'border-amber/20',
+    bg: 'bg-amber/5',
+    border: 'border-amber/18',
     icon: 'text-amber',
     badge: 'bg-amber/10',
     button: 'bg-amber hover:bg-amber/90 text-navy',
-    pillBg: 'bg-amber/8',
+    pillBg: 'bg-amber/7',
     pillText: 'text-amber',
-    glow: 'shadow-[0_0_0_4px_rgba(217,119,6,0.1)]',
+    glow: 'ring-2 ring-amber/12',
+    accent: 'bg-amber',
+    barBg: 'bg-amber/8',
+    stepColor: 'text-amber',
+    heroGradient: 'from-amber/5 via-amber/2 to-transparent',
   },
   destructive: {
-    bg: 'bg-red/6',
-    border: 'border-red/20',
+    bg: 'bg-red/5',
+    border: 'border-red/18',
     icon: 'text-red',
     badge: 'bg-red/10',
     button: 'bg-red hover:bg-red/90 text-white',
-    pillBg: 'bg-red/8',
+    pillBg: 'bg-red/7',
     pillText: 'text-red',
-    glow: 'shadow-[0_0_0_4px_rgba(220,38,38,0.1)]',
+    glow: 'ring-2 ring-red/12',
+    accent: 'bg-red',
+    barBg: 'bg-red/8',
+    stepColor: 'text-red',
+    heroGradient: 'from-red/5 via-red/2 to-transparent',
   },
   info: {
-    bg: 'bg-teal/6',
-    border: 'border-teal/20',
+    bg: 'bg-teal/5',
+    border: 'border-teal/18',
     icon: 'text-teal',
     badge: 'bg-teal/10',
     button: 'bg-teal hover:bg-teal/90 text-white',
-    pillBg: 'bg-teal/8',
+    pillBg: 'bg-teal/7',
     pillText: 'text-teal',
-    glow: 'shadow-[0_0_0_4px_rgba(43,138,138,0.1)]',
+    glow: 'ring-2 ring-teal/12',
+    accent: 'bg-teal',
+    barBg: 'bg-teal/8',
+    stepColor: 'text-teal',
+    heroGradient: 'from-teal/5 via-teal/2 to-transparent',
   },
+}
+
+const TONE_LABELS: Record<ActionTone, string> = {
+  primary: 'Primary Action',
+  success: 'Approval',
+  warning: 'Escalation',
+  destructive: 'Critical Action',
+  info: 'Information',
 }
 
 const toneToastIcon: Record<ActionTone, React.ComponentType<{ className?: string }>> = {
@@ -143,6 +177,17 @@ const toneToastIcon: Record<ActionTone, React.ComponentType<{ className?: string
   warning: AlertTriangle,
   destructive: XCircle,
   info: Sparkles,
+}
+
+/* ── Field icon map ── */
+function fieldIcon(f: ActionField) {
+  if (f.type === 'textarea') return FileText
+  if (f.type === 'input') {
+    if ('inputType' in f && f.inputType === 'date') return Clock
+    if ('inputType' in f && f.inputType === 'email') return Mail
+    return BookOpen
+  }
+  return Shield
 }
 
 export function ActionModal({
@@ -163,6 +208,7 @@ export function ActionModal({
   const [values, setValues] = React.useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = React.useState(false)
   const [errors, setErrors] = React.useState<Record<string, string>>({})
+  const [activeField, setActiveField] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     if (open) {
@@ -175,11 +221,19 @@ export function ActionModal({
       setValues(initial)
       setErrors({})
       setIsSubmitting(false)
+      setActiveField(null)
     }
   }, [open]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const tc = toneConfig[tone]
   const ToastIcon = toneToastIcon[tone]
+
+  // Progress: how many required fields are filled
+  const requiredFields = fields.filter((f) => f.required)
+  const filledRequired = requiredFields.filter((f) => values[f.name]?.trim()).length
+  const progress = requiredFields.length > 0
+    ? Math.round((filledRequired / requiredFields.length) * 100)
+    : 100
 
   const handleConfirm = async () => {
     const newErrors: Record<string, string> = {}
@@ -208,34 +262,70 @@ export function ActionModal({
   }
 
   const footer = (
-    <div className="flex items-center justify-end gap-3">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => onOpenChange(false)}
-        disabled={isSubmitting}
-        className="h-9 px-5 border-line text-[12px]"
-      >
-        {cancelLabel}
-      </Button>
-      <Button
-        size="sm"
-        onClick={handleConfirm}
-        disabled={isSubmitting}
-        className={cn('h-9 min-w-[140px] text-[12px] font-semibold shadow-sm', tc.button)}
-      >
-        {isSubmitting ? (
+    <div className="flex items-center justify-between gap-4">
+      {/* Progress indicator */}
+      <div className="flex items-center gap-3 min-w-0">
+        {requiredFields.length > 0 && (
           <>
-            <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
-            Processing…
-          </>
-        ) : (
-          <>
-            {confirmLabel}
-            <ChevronRight className="w-3.5 h-3.5 ml-1.5" />
+            <div className="hidden sm:flex items-center gap-2">
+              <div className="w-32 h-1.5 rounded-full bg-line overflow-hidden">
+                <motion.div
+                  className={cn('h-full rounded-full', tc.accent)}
+                  initial={{ width: 0 }}
+                  animate={{ width: `${progress}%` }}
+                  transition={{ duration: 0.4, ease: 'easeOut' }}
+                />
+              </div>
+              <span className="text-[10px] font-semibold text-muted-foreground whitespace-nowrap">
+                {filledRequired}/{requiredFields.length} required
+              </span>
+            </div>
+            {progress === 100 && (
+              <motion.span
+                initial={{ opacity: 0, scale: 0.8 }}
+                animate={{ opacity: 1, scale: 1 }}
+                className="hidden sm:flex items-center gap-1 text-[10px] font-semibold text-green"
+              >
+                <CheckCircle2 className="w-3 h-3" /> Ready
+              </motion.span>
+            )}
           </>
         )}
-      </Button>
+      </div>
+
+      <div className="flex items-center gap-2.5 shrink-0">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => onOpenChange(false)}
+          disabled={isSubmitting}
+          className="h-9 px-5 border-line text-[12px] hover:bg-secondary"
+        >
+          {cancelLabel}
+        </Button>
+        <Button
+          size="sm"
+          onClick={handleConfirm}
+          disabled={isSubmitting || progress < 100}
+          className={cn(
+            'h-9 min-w-[160px] text-[12px] font-semibold shadow-sm gap-2 transition-all',
+            tc.button,
+            progress < 100 && 'opacity-60',
+          )}
+        >
+          {isSubmitting ? (
+            <>
+              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              Processing&hellip;
+            </>
+          ) : (
+            <>
+              {confirmLabel}
+              <ChevronRight className="w-3.5 h-3.5" />
+            </>
+          )}
+        </Button>
+      </div>
     </div>
   )
 
@@ -247,164 +337,376 @@ export function ActionModal({
       description={description}
       footer={footer}
     >
-      {/* ── Full-body layout ── */}
-      <div className="grid grid-cols-1 xl:grid-cols-[1fr_1.4fr] divide-y xl:divide-y-0 xl:divide-x divide-line h-full">
+      <div className="grid grid-cols-1 xl:grid-cols-[400px_1fr] h-full divide-y xl:divide-y-0 xl:divide-x divide-line">
 
-        {/* LEFT — Identity + context ── */}
-        <div className="px-6 py-6 space-y-5">
+        {/* ════════════════════════════════════════
+            LEFT COLUMN — Identity + Context
+        ════════════════════════════════════════ */}
+        <div className="flex flex-col gap-5 px-6 py-7 overflow-y-auto">
 
-          {/* Tone identity card */}
+          {/* Hero identity card */}
           <motion.div
-            initial={{ opacity: 0, y: 6 }}
+            initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.28 }}
             className={cn(
-              'flex items-start gap-4 p-5 rounded-2xl border',
+              'relative overflow-hidden rounded-2xl border p-5',
               tc.bg, tc.border,
             )}
           >
-            <div className={cn(
-              'shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border',
-              tc.badge, tc.border, tc.glow,
-            )}>
-              <Icon className={cn('w-5 h-5', tc.icon)} />
-            </div>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-[14px] font-semibold text-foreground leading-tight">{title}</h3>
-              {description && (
-                <p className="text-[12px] text-muted-foreground mt-1 leading-relaxed">{description}</p>
-              )}
+            {/* Subtle gradient wash */}
+            <div className={cn('absolute inset-0 bg-gradient-to-br opacity-60 pointer-events-none', tc.heroGradient)} />
+
+            <div className="relative flex items-start gap-4">
+              <div className={cn(
+                'shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border',
+                tc.badge, tc.border, tc.glow,
+              )}>
+                <Icon className={cn('w-5 h-5', tc.icon)} />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className={cn(
+                    'inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded-full border',
+                    tc.pillBg, tc.border, tc.pillText,
+                  )}>
+                    <Zap className="w-2.5 h-2.5" />
+                    {TONE_LABELS[tone]}
+                  </span>
+                </div>
+                <h3 className="text-[15px] font-bold text-foreground leading-tight mt-2">
+                  {title}
+                </h3>
+                {description && (
+                  <p className="text-[12px] text-muted-foreground mt-1.5 leading-relaxed">
+                    {description}
+                  </p>
+                )}
+              </div>
             </div>
           </motion.div>
 
-          {/* Context block */}
+          {/* "Acting On" context block */}
           {context && context.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, y: 6 }}
+              initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, delay: 0.05 }}
-              className="rounded-2xl border border-line bg-secondary/40 overflow-hidden"
+              transition={{ duration: 0.28, delay: 0.06 }}
+              className="rounded-2xl border border-line bg-card overflow-hidden shadow-sm"
             >
-              <div className="px-4 py-3 border-b border-line bg-secondary/60">
+              {/* Header */}
+              <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/50">
+                <Activity className="w-3.5 h-3.5 text-muted-foreground" />
                 <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
                   Acting on
                 </p>
               </div>
-              <div className="p-4">
-                <dl className="grid grid-cols-2 gap-x-4 gap-y-4">
-                  {context.map((row, i) => (
-                    <div key={i} className={cn(context.length === 1 && 'col-span-2')}>
-                      <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                        {row.label}
-                      </dt>
-                      <dd className="text-[13px] text-foreground font-semibold">
-                        {row.value}
-                      </dd>
-                    </div>
-                  ))}
-                </dl>
-              </div>
+
+              {/* Context rows */}
+              <dl className="divide-y divide-line">
+                {context.map((row, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -4 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.2, delay: 0.08 + i * 0.05 }}
+                    className="grid grid-cols-2 gap-x-4 px-4 py-3"
+                  >
+                    <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold self-start pt-0.5">
+                      {row.label}
+                    </dt>
+                    <dd className="text-[13px] text-foreground font-semibold text-right">
+                      {row.value}
+                    </dd>
+                  </motion.div>
+                ))}
+              </dl>
             </motion.div>
           )}
 
-          {/* Tone classification pill */}
-          <div className={cn('inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-semibold border', tc.pillBg, tc.border, tc.pillText)}>
-            <Icon className="w-3 h-3" />
-            {tone.charAt(0).toUpperCase() + tone.slice(1)} action
-          </div>
+          {/* Workflow steps indicator */}
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.28, delay: 0.12 }}
+            className="rounded-2xl border border-line bg-card overflow-hidden shadow-sm"
+          >
+            <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/50">
+              <Shield className="w-3.5 h-3.5 text-muted-foreground" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+                Workflow
+              </p>
+            </div>
+            <div className="p-4 space-y-3">
+              {[
+                { label: 'Fill in action details', done: filledRequired === requiredFields.length && requiredFields.length > 0 },
+                { label: 'Review context above', done: true },
+                { label: 'Submit for audit trail', done: false },
+              ].map((step, i) => (
+                <div key={i} className="flex items-center gap-3">
+                  <div className={cn(
+                    'w-5 h-5 rounded-full flex items-center justify-center border shrink-0 transition-all duration-300',
+                    step.done
+                      ? cn(tc.badge, tc.border)
+                      : 'bg-secondary border-line',
+                  )}>
+                    {step.done
+                      ? <CheckCircle2 className={cn('w-3 h-3', tc.icon)} />
+                      : <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
+                    }
+                  </div>
+                  <span className={cn(
+                    'text-[12px] font-medium transition-colors',
+                    step.done ? 'text-foreground' : 'text-muted-foreground',
+                  )}>
+                    {step.label}
+                  </span>
+                  {i < 2 && <ArrowRight className="w-3 h-3 text-muted-foreground/30 ml-auto" />}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+
+          {/* Audit trail notice */}
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.3, delay: 0.18 }}
+            className="flex items-start gap-2.5 px-3.5 py-3 rounded-xl border border-line bg-secondary/30"
+          >
+            <BookOpen className="w-3.5 h-3.5 text-muted-foreground shrink-0 mt-0.5" />
+            <p className="text-[11px] text-muted-foreground leading-relaxed">
+              This action is logged to the immutable audit trail with timestamp, actor, and all field values.
+            </p>
+          </motion.div>
         </div>
 
-        {/* RIGHT — Form fields ── */}
-        <div className="px-6 py-6">
-          {fields.length === 0 ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ duration: 0.3, delay: 0.1 }}
-              className="h-full flex flex-col items-center justify-center text-center py-16 space-y-3"
-            >
-              <div className={cn('w-16 h-16 rounded-2xl flex items-center justify-center border', tc.badge, tc.border)}>
-                <Icon className={cn('w-7 h-7', tc.icon)} />
-              </div>
-              <p className="text-[15px] font-semibold text-foreground">Ready to confirm</p>
-              <p className="text-[12px] text-muted-foreground max-w-xs leading-relaxed">
-                {description ?? `This action will be recorded in the audit trail and cannot be undone.`}
-              </p>
-            </motion.div>
-          ) : (
-            <div className="space-y-5">
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground mb-4">
+        {/* ════════════════════════════════════════
+            RIGHT COLUMN — Action Details Form
+        ════════════════════════════════════════ */}
+        <div className="flex flex-col px-6 py-7 overflow-y-auto">
+
+          {/* Section header */}
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground flex items-center gap-1.5">
+                <FileText className="w-3 h-3" />
                 Action details
               </p>
-              {fields.map((f, fi) => (
-                <motion.div
-                  key={f.name}
-                  initial={{ opacity: 0, y: 6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.22, delay: fi * 0.06 }}
-                  className="space-y-2"
-                >
-                  <Label
-                    htmlFor={f.name}
-                    className="text-[10px] uppercase tracking-[0.12em] font-bold text-muted-foreground flex items-center gap-1"
+              <p className="text-[11px] text-muted-foreground mt-0.5">
+                {fields.length > 0
+                  ? `Complete ${fields.length} field${fields.length > 1 ? 's' : ''} to proceed`
+                  : 'No additional fields required'}
+              </p>
+            </div>
+            {/* Completion ring */}
+            <div className="shrink-0">
+              <svg width="40" height="40" viewBox="0 0 40 40">
+                <circle cx="20" cy="20" r="15" fill="none" stroke="var(--line)" strokeWidth="3" />
+                <motion.circle
+                  cx="20" cy="20" r="15"
+                  fill="none"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  stroke={tone === 'destructive' ? 'var(--red)' : tone === 'success' ? 'var(--green)' : tone === 'warning' ? 'var(--amber)' : tone === 'info' ? 'var(--teal)' : 'var(--gold)'}
+                  strokeDasharray={`${2 * Math.PI * 15}`}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 15 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 15 * (1 - progress / 100) }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                  transform="rotate(-90 20 20)"
+                />
+                <text x="20" y="24" textAnchor="middle" fontSize="10" fontWeight="700"
+                  fill={tone === 'destructive' ? 'var(--red)' : tone === 'success' ? 'var(--green)' : tone === 'warning' ? 'var(--amber)' : tone === 'info' ? 'var(--teal)' : 'var(--gold)'}>
+                  {progress}%
+                </text>
+              </svg>
+            </div>
+          </div>
+
+          {fields.length === 0 ? (
+            /* ── No-fields empty state ── */
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: 0.1 }}
+              className={cn(
+                'flex-1 flex flex-col items-center justify-center text-center py-16 rounded-2xl border',
+                tc.bg, tc.border,
+              )}
+            >
+              <div className={cn(
+                'w-20 h-20 rounded-3xl flex items-center justify-center border mb-5',
+                tc.badge, tc.border, tc.glow,
+              )}>
+                <Icon className={cn('w-9 h-9', tc.icon)} />
+              </div>
+              <h4 className="text-[16px] font-bold text-foreground mb-2">Ready to confirm</h4>
+              <p className="text-[12px] text-muted-foreground max-w-xs leading-relaxed mb-6">
+                {description ?? 'This action will be recorded in the audit trail and cannot be undone.'}
+              </p>
+              <Button
+                onClick={handleConfirm}
+                disabled={isSubmitting}
+                className={cn('h-10 px-8 gap-2 font-semibold text-[13px]', tc.button)}
+              >
+                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                {confirmLabel}
+              </Button>
+            </motion.div>
+          ) : (
+            /* ── Form fields ── */
+            <div className="flex flex-col gap-5 flex-1">
+              {fields.map((f, fi) => {
+                const FIcon = fieldIcon(f)
+                const isActive = activeField === f.name
+                const hasError = !!errors[f.name]
+                const isFilled = !!values[f.name]?.trim()
+
+                return (
+                  <motion.div
+                    key={f.name}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.22, delay: fi * 0.07 }}
+                    className={cn(
+                      'rounded-2xl border transition-all duration-200',
+                      isActive
+                        ? cn('bg-card', tc.border, tc.glow)
+                        : hasError
+                          ? 'bg-card border-red/30'
+                          : isFilled
+                            ? 'bg-card border-green/25'
+                            : 'bg-card border-line',
+                    )}
                   >
-                    {f.label}
-                    {f.required && <span className="text-red">*</span>}
-                  </Label>
+                    {/* Field header */}
+                    <div className="flex items-center justify-between px-4 pt-4 pb-2">
+                      <Label
+                        htmlFor={f.name}
+                        className="flex items-center gap-1.5 text-[10px] uppercase tracking-[0.12em] font-bold text-muted-foreground cursor-pointer"
+                      >
+                        <FIcon className={cn('w-3 h-3', isActive ? tc.icon : 'text-muted-foreground')} />
+                        {f.label}
+                        {f.required && <span className="text-red ml-0.5">*</span>}
+                      </Label>
+                      <AnimatePresence mode="wait">
+                        {isFilled && !hasError && (
+                          <motion.div
+                            key="filled"
+                            initial={{ opacity: 0, scale: 0.6 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.6 }}
+                            className="w-4 h-4 rounded-full bg-green/15 flex items-center justify-center"
+                          >
+                            <CheckCircle2 className="w-2.5 h-2.5 text-green" />
+                          </motion.div>
+                        )}
+                        {hasError && (
+                          <motion.div
+                            key="error"
+                            initial={{ opacity: 0, scale: 0.6 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.6 }}
+                            className="w-4 h-4 rounded-full bg-red/15 flex items-center justify-center"
+                          >
+                            <AlertTriangle className="w-2.5 h-2.5 text-red" />
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
 
-                  {f.type === 'select' && (
-                    <Select
-                      value={values[f.name] ?? ''}
-                      onValueChange={(v) => setValues((prev) => ({ ...prev, [f.name]: v }))}
-                    >
-                      <SelectTrigger id={f.name} className="h-10 text-[12px] rounded-xl">
-                        <SelectValue placeholder={f.placeholder} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {f.options.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            <div>
-                              <div className="text-[12px] font-medium">{opt.label}</div>
-                              {opt.description && (
-                                <div className="text-[10px] text-muted-foreground">{opt.description}</div>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  )}
+                    {/* Field input */}
+                    <div className="px-4 pb-4">
+                      {f.type === 'select' && (
+                        <Select
+                          value={values[f.name] ?? ''}
+                          onValueChange={(v) => {
+                            setValues((prev) => ({ ...prev, [f.name]: v }))
+                            setErrors((prev) => { const n = { ...prev }; delete n[f.name]; return n })
+                          }}
+                        >
+                          <SelectTrigger
+                            id={f.name}
+                            className="h-10 text-[12px] rounded-xl border-0 bg-secondary/50 focus:ring-0 focus:ring-offset-0"
+                            onFocus={() => setActiveField(f.name)}
+                            onBlur={() => setActiveField(null)}
+                          >
+                            <SelectValue placeholder={f.placeholder} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {f.options.map((opt) => (
+                              <SelectItem key={opt.value} value={opt.value}>
+                                <div>
+                                  <div className="text-[12px] font-medium">{opt.label}</div>
+                                  {opt.description && (
+                                    <div className="text-[10px] text-muted-foreground">{opt.description}</div>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
 
-                  {f.type === 'textarea' && (
-                    <Textarea
-                      id={f.name}
-                      placeholder={f.placeholder}
-                      rows={f.rows ?? 4}
-                      value={values[f.name] ?? ''}
-                      onChange={(e) => setValues((prev) => ({ ...prev, [f.name]: e.target.value }))}
-                      className="text-[12px] resize-none rounded-xl leading-relaxed"
-                    />
-                  )}
+                      {f.type === 'textarea' && (
+                        <Textarea
+                          id={f.name}
+                          placeholder={f.placeholder}
+                          rows={f.rows ?? 4}
+                          value={values[f.name] ?? ''}
+                          onChange={(e) => {
+                            setValues((prev) => ({ ...prev, [f.name]: e.target.value }))
+                            setErrors((prev) => { const n = { ...prev }; delete n[f.name]; return n })
+                          }}
+                          onFocus={() => setActiveField(f.name)}
+                          onBlur={() => setActiveField(null)}
+                          className="text-[12px] resize-none rounded-xl border-0 bg-secondary/50 leading-relaxed focus-visible:ring-0"
+                        />
+                      )}
 
-                  {f.type === 'input' && (
-                    <Input
-                      id={f.name}
-                      type={f.inputType ?? 'text'}
-                      placeholder={f.placeholder}
-                      value={values[f.name] ?? ''}
-                      onChange={(e) => setValues((prev) => ({ ...prev, [f.name]: e.target.value }))}
-                      className="h-10 text-[12px] rounded-xl"
-                    />
-                  )}
+                      {f.type === 'input' && (
+                        <Input
+                          id={f.name}
+                          type={f.inputType ?? 'text'}
+                          placeholder={f.placeholder}
+                          value={values[f.name] ?? ''}
+                          onChange={(e) => {
+                            setValues((prev) => ({ ...prev, [f.name]: e.target.value }))
+                            setErrors((prev) => { const n = { ...prev }; delete n[f.name]; return n })
+                          }}
+                          onFocus={() => setActiveField(f.name)}
+                          onBlur={() => setActiveField(null)}
+                          className="h-10 text-[12px] rounded-xl border-0 bg-secondary/50 focus-visible:ring-0"
+                        />
+                      )}
 
-                  {errors[f.name] && (
-                    <p className="text-[11px] text-red font-semibold flex items-center gap-1">
-                      <AlertTriangle className="w-3 h-3" />
-                      {errors[f.name]}
-                    </p>
-                  )}
-                </motion.div>
-              ))}
+                      {hasError && (
+                        <motion.p
+                          initial={{ opacity: 0, y: -4 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="text-[11px] text-red font-semibold flex items-center gap-1 mt-2"
+                        >
+                          <AlertTriangle className="w-3 h-3" />
+                          {errors[f.name]}
+                        </motion.p>
+                      )}
+                    </div>
+                  </motion.div>
+                )
+              })}
+
+              {/* Bottom hint */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.4 }}
+                className="flex items-center gap-2 px-3.5 py-2.5 rounded-xl bg-secondary/60 border border-line mt-auto"
+              >
+                <Send className="w-3.5 h-3.5 text-muted-foreground shrink-0" />
+                <p className="text-[11px] text-muted-foreground">
+                  All responses are immediately committed to the immutable event log on submit.
+                </p>
+              </motion.div>
             </div>
           )}
         </div>
@@ -419,7 +721,7 @@ export const ActionIcons = {
   Approve: CheckCircle2,
   Reject: XCircle,
   Reassign: UserCog,
-  Send: Send,
+  Send,
   Email: Mail,
   Note: FileText,
   Sparkles,

@@ -49,16 +49,16 @@ export function PagePanel({
           role="dialog"
           aria-modal="true"
           aria-labelledby="pp-title"
+          style={{ backgroundColor: 'var(--background)' }}
           className={cn(
             // Covers only the content area (right of sidebar, below topbar)
-            // using fixed positioning anchored via CSS env vars / known dimensions
-            'fixed z-30',
+            'fixed z-40',
             'top-12 sm:top-14',       // below topbar
             'bottom-0',
             'left-0 lg:left-[264px]', // right of sidebar on desktop
             'right-0',
             'flex flex-col',
-            'bg-background',
+            'shadow-[0_-2px_32px_rgba(0,0,0,0.08)]',
           )}
           initial={{ opacity: 0, x: 40 }}
           animate={{ opacity: 1, x: 0 }}
