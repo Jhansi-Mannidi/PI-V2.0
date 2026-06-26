@@ -1,10 +1,10 @@
 'use client'
 
 import * as React from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
 import { cn } from '@/lib/utils'
-import { ShieldCheck, Download, Bell, LayoutGrid, Activity, Scale, AlertOctagon } from 'lucide-react'
+import { ShieldCheck, Download, Bell, LayoutGrid, Activity, Scale, AlertOctagon, Users, CalendarDays } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PulseIndicator } from '@/components/animated-primitives'
 import { ControlsKpiStrip } from '@/components/controls/controls-kpi-strip'
@@ -12,6 +12,8 @@ import { ControlHeatmap } from '@/components/controls/control-heatmap'
 import { AutoAuditConsole } from '@/components/controls/auto-audit-console'
 import { ComplianceRegister } from '@/components/controls/compliance-register'
 import { ControlGapExplorer } from '@/components/controls/control-gap-explorer'
+import { ControlsLibrary } from '@/components/controls/controls-library'
+import { AuditScheduler } from '@/components/controls/audit-scheduler'
 import { useActionModal } from '@/hooks/use-action-modal'
 import {
   CONTROL_GAPS,
@@ -26,7 +28,9 @@ const ease = [0.25, 0.46, 0.45, 0.94] as const
 
 const tabs = [
   { id: 'posture', label: 'Posture', icon: LayoutGrid },
+  { id: 'library', label: 'Controls Library', icon: Users },
   { id: 'audit', label: 'Auto-Audit', icon: Activity },
+  { id: 'schedule', label: 'Audit Schedule', icon: CalendarDays },
   { id: 'compliance', label: 'Compliance', icon: Scale },
   { id: 'gaps', label: 'Control Gaps', icon: AlertOctagon },
 ] as const
@@ -116,7 +120,7 @@ export default function ControlsPage() {
   }
 
   return (
-    <AppShell title="Controls & Auto-Audit" subtitle="Compliance posture, control health & continuous assurance" activeHref="/controls">
+    <AppShell title="Controls & Auto-Audit" subtitle="Compliance posture, control health, owner assignments & audit scheduling" activeHref="/controls">
       <div className="space-y-4 sm:space-y-6 w-full">
         {/* ── Header ── */}
         <div className="bg-card rounded-xl border border-line p-5 shadow-sm">
@@ -128,7 +132,7 @@ export default function ControlsPage() {
               <div className="min-w-0">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-gold/15 border border-gold/30 text-gold text-[10px] font-bold tracking-wide uppercase">
-                    Controls · Compliance · Auto-Audit
+                    Controls · Compliance · Auto-Audit · Owner Assignment · Audit Schedule
                   </span>
                   <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-green-bg border border-green/30 text-green text-[10px] font-semibold">
                     <PulseIndicator color="bg-green" size="w-1.5 h-1.5" /> Engine live
@@ -138,7 +142,7 @@ export default function ControlsPage() {
                   Are our controls actually working — everywhere, right now?
                 </h2>
                 <p className="text-[12px] text-muted-foreground mt-0.5">
-                  248 controls continuously generated, tested and scored across 4 programs · last sweep 2 min ago
+                  248 controls continuously generated, tested and scored across 4 programs · 12 owners assigned · 13 recurring audit schedules active
                 </p>
               </div>
             </div>
@@ -190,7 +194,7 @@ export default function ControlsPage() {
                     title: 'Export Compliance Pack',
                     description: 'Generate a portfolio controls pack with posture, heatmap, gaps, and audit evidence.',
                     context: [
-                      { label: 'Sections', value: 'Posture · Auto-Audit · Compliance · Gaps' },
+                      { label: 'Sections', value: 'Posture · Auto-Audit · Compliance · Gaps · Owner Assignments' },
                       { label: 'Format', value: 'PDF evidence pack' },
                     ],
                     fields: [
@@ -239,7 +243,7 @@ export default function ControlsPage() {
 
         {/* ── Tab Strip ── */}
         <div className="sticky top-0 z-10 -mx-1 px-1">
-          <div className="flex items-center gap-1.5 p-1 bg-card border border-line rounded-xl overflow-x-auto shadow-sm">
+          <div className="flex items-center gap-1 p-1 bg-card border border-line rounded-xl overflow-x-auto shadow-sm no-scrollbar">
             {tabs.map((t) => {
               const active = tab === t.id
               return (
@@ -247,11 +251,11 @@ export default function ControlsPage() {
                   key={t.id}
                   onClick={() => setTab(t.id)}
                   className={cn(
-                    'flex items-center gap-2 px-4 py-2 rounded-lg text-[13px] font-semibold whitespace-nowrap transition-all',
+                    'flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12.5px] font-semibold whitespace-nowrap transition-all',
                     active ? 'bg-gold text-navy shadow-sm' : 'text-muted-foreground hover:bg-secondary hover:text-foreground'
                   )}
                 >
-                  <t.icon className="w-4 h-4" />
+                  <t.icon className="w-3.5 h-3.5" />
                   {t.label}
                 </button>
               )
@@ -303,7 +307,9 @@ export default function ControlsPage() {
               <ControlGapExplorer />
             </>
           )}
+          {tab === 'library' && <ControlsLibrary />}
           {tab === 'audit' && <AutoAuditConsole />}
+          {tab === 'schedule' && <AuditScheduler />}
           {tab === 'compliance' && <ComplianceRegister />}
           {tab === 'gaps' && <ControlGapExplorer />}
         </motion.div>
