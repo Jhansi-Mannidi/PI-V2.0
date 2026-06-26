@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
 import { KPICard } from '@/components/kpi-card'
@@ -9,6 +10,7 @@ import { SLAPanels } from '@/components/sla-panels'
 import { KeyPersonRiskPanel, AwaitingApprovalPanel } from '@/components/bottom-panels'
 import { KPIDrillDownModal } from '@/components/kpi-drill-down-modal'
 import { VarianceContextCard, SupplierPerformanceModule } from '@/components/director-enhancements'
+import { LiveCommandPanel } from '@/components/live-command-panel'
 
 // Animation variants for staggered children
 const containerVariants = {
@@ -137,7 +139,12 @@ export default function DirectorCommandView() {
           </div>
         </motion.section>
 
-        {/* ─── REGION 2: Variance Context - Data vs Human ─── */}
+        {/* ─── REGION 2: Live Risk & Activity Command Panel ─── */}
+        <motion.section variants={sectionVariants}>
+          <LiveCommandPanel />
+        </motion.section>
+
+        {/* ─── REGION 3: Variance Context - Data vs Human ─── */}
         <motion.section variants={sectionVariants}>
           <VarianceContextCard />
         </motion.section>

@@ -28,6 +28,7 @@ import {
   CONTROLS_AUDIT_OCCURRENCES,
   getControlsAuditKpis,
 } from '@/lib/governance-data'
+import { ControlsActivityPanel } from '@/components/controls/controls-activity-panel'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
 
@@ -367,6 +368,7 @@ export default function ControlsPage() {
                   })
                 }
               />
+              <ControlsActivityPanel />
               <ControlGapExplorer />
             </>
           )}

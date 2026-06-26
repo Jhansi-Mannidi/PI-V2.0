@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
 import { cn } from '@/lib/utils'
 import {
@@ -18,12 +18,18 @@ import {
   ChevronRight,
   BarChart3,
   Timer,
+  Users,
+  Activity,
+  UserCheck,
+  Upload,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useActionModal } from '@/hooks/use-action-modal'
 import { Badge } from '@/components/ui/badge'
 import { AnimNum, FadeUp, GrowVertical } from '@/components/animated-primitives'
 import { useAI } from '@/components/ai-provider'
+import { usePIPStore } from '@/hooks/use-pip-store'
+import { USERS } from '@/lib/governance-data'
 
 /* ── SLA Definition Data ── */
 const slaDefinitions = [
@@ -56,6 +62,157 @@ const weeklyTrend = [
 ]
 
 type TabFilter = 'all' | 'breached' | 'warning' | 'ok'
+
+function LiveBreachPanel() {
+  const { openBreaches, resolveBreach, escalateBreach, reassignBreach, recentActivity } = usePIPStore()
+  const [expandedId, setExpandedId] = React.useState<string | null>(null)
+  const [resolveNote, setResolveNote] = React.useState<Record<string, string>>({})
+
+  const slaActivity = recentActivity.filter(
+    (a) => a.kind === 'SLA_BREACH_RESOLVED' || a.kind === 'SLA_ESCALATED' || a.kind === 'SLA_REASSIGNED'
+  ).slice(0, 6)
+
+  return (
+    <div className="bg-card rounded-2xl border border-line p-5 shadow-sm space-y-4">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+          <AlertTriangle className="w-3.5 h-3.5 text-red" /> Live Breach Management
+          <span className="ml-1 px-1.5 py-0.5 rounded-full bg-red/15 text-red text-[10px] font-bold">{openBreaches.length} open</span>
+        </p>
+      </div>
+
+      {/* Breach rows */}
+      <div className="space-y-2">
+        {openBreaches.length === 0 && (
+          <div className="text-center py-8 text-muted-foreground text-sm">No open breaches. All SLAs on track.</div>
+        )}
+        {openBreaches.map((b, i) => (
+          <motion.div key={b.id} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.18, delay: i * 0.04 }}
+            className="border border-line rounded-xl overflow-hidden"
+          >
+            <button onClick={() => setExpandedId(expandedId === b.id ? null : b.id)}
+              className="w-full flex items-start gap-3 px-4 py-3 text-left hover:bg-secondary/40 transition-colors">
+              <div className={cn('w-2 h-2 rounded-full shrink-0 mt-2',
+                b.status === 'escalated' ? 'bg-red' : 'bg-amber'
+              )} />
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] font-mono text-muted-foreground">{b.instance}</span>
+                  <span className={cn('text-[9px] font-semibold px-1.5 py-0.5 rounded border',
+                    b.status === 'escalated' ? 'bg-red/10 border-red/30 text-red' : 'bg-amber/10 border-amber/30 text-amber'
+                  )}>{b.status}</span>
+                </div>
+                <p className="text-[13px] font-semibold text-foreground">{b.slaName} — {b.project}</p>
+                <div className="flex items-center gap-3 mt-0.5 flex-wrap">
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> {b.elapsed}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <UserCheck className="w-3 h-3" /> Owner: <strong className="text-foreground">{b.ownerName}</strong>
+                  </span>
+                  <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                    <Upload className="w-3 h-3" /> Entered by: <strong className="text-foreground">{b.uploadedByName}</strong>
+                  </span>
+                  {b.reviewedByName && (
+                    <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+                      <CheckCircle2 className="w-3 h-3 text-green" /> Reviewed: <strong className="text-foreground">{b.reviewedByName}</strong>
+                    </span>
+                  )}
+                </div>
+                {b.affectedParties.length > 0 && (
+                  <div className="flex gap-1 mt-1 flex-wrap">
+                    <span className="text-[9px] text-muted-foreground">Affected:</span>
+                    {b.affectedParties.filter(Boolean).slice(0, 3).map((p) => (
+                      <span key={p} className="text-[9px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground border border-line">{p}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <ChevronDown className={cn('w-4 h-4 text-muted-foreground shrink-0 mt-1 transition-transform', expandedId === b.id && 'rotate-180')} />
+            </button>
+
+            <AnimatePresence>
+              {expandedId === b.id && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }}
+                  exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.18 }}
+                  className="border-t border-line bg-secondary/30 px-4 py-3 overflow-hidden"
+                >
+                  <p className="text-[11px] text-muted-foreground mb-2 italic">{b.notes}</p>
+                  <div className="mb-2">
+                    <label className="text-[10px] font-semibold uppercase text-muted-foreground block mb-1">Resolve note</label>
+                    <input
+                      type="text"
+                      placeholder="Describe resolution..."
+                      value={resolveNote[b.id] ?? ''}
+                      onChange={(e) => setResolveNote((prev) => ({ ...prev, [b.id]: e.target.value }))}
+                      className="w-full text-xs border border-line rounded-lg px-2.5 py-1.5 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-gold/60"
+                    />
+                  </div>
+                  <div className="flex gap-2 flex-wrap">
+                    <Button size="sm" className="h-7 text-[11px] bg-green/90 text-white border-transparent"
+                      disabled={!resolveNote[b.id]?.trim()}
+                      onClick={() => { resolveBreach(b.id, resolveNote[b.id] ?? 'Resolved'); setExpandedId(null) }}>
+                      Mark Resolved
+                    </Button>
+                    <Button size="sm" variant="outline" className="h-7 text-[11px] border-red/30 text-red hover:bg-red/10"
+                      onClick={() => escalateBreach(b.id)}>
+                      Escalate
+                    </Button>
+                    <select
+                      className="text-[11px] border border-line rounded-lg px-2 py-1 bg-background text-foreground focus:outline-none"
+                      defaultValue=""
+                      onChange={(e) => { if (e.target.value) reassignBreach(b.id, e.target.value) }}
+                    >
+                      <option value="" disabled>Reassign to...</option>
+                      {USERS.map((u) => <option key={u.id} value={u.id}>{u.name}</option>)}
+                    </select>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </motion.div>
+        ))}
+      </div>
+
+      {/* SLA Activity trail */}
+      {slaActivity.length > 0 && (
+        <div className="border-t border-line pt-4">
+          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2.5 flex items-center gap-1.5">
+            <Activity className="w-3 h-3" /> SLA Activity — Who acted, who is affected
+          </p>
+          <div className="space-y-2">
+            {slaActivity.map((act, i) => {
+              const timeAgo = Math.round((Date.now() - act.at) / 60000)
+              const label = timeAgo < 2 ? 'just now' : timeAgo < 60 ? `${timeAgo}m ago` : `${Math.round(timeAgo / 60)}h ago`
+              return (
+                <div key={act.id} className="flex items-start gap-2">
+                  <div className="w-6 h-6 rounded-full bg-amber/20 border border-amber/35 flex items-center justify-center shrink-0 mt-0.5">
+                    <span className="text-[8px] font-bold text-amber">{act.actorName.split(' ').map((n) => n[0]).join('').slice(0, 2)}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-foreground">{act.actorName}</span>
+                      <span className="text-[9px] text-muted-foreground">{label}</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">{act.detail}</p>
+                    {act.affectedParties?.filter(Boolean).length > 0 && (
+                      <div className="flex gap-1 mt-0.5 flex-wrap">
+                        {act.affectedParties.filter(Boolean).slice(0, 3).map((p) => (
+                          <span key={p} className="text-[9px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{p}</span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function SLATrackerPage() {
   const { aiEnabled } = useAI()
@@ -148,6 +305,9 @@ export default function SLATrackerPage() {
             </div>
           </FadeUp>
         </div>
+
+        {/* ── Live Breach Management ── */}
+        <LiveBreachPanel />
 
         {/* ── Weekly Trend Chart - Professional Horizontal Bars ── */}
         <div className="bg-card rounded-xl border border-border p-6 shadow-[var(--shadow-sm)]">

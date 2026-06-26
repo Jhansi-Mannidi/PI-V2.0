@@ -13,10 +13,11 @@ import {
   Clock, Edit2, FileText, X, History, RefreshCw, Sparkles,
 } from 'lucide-react'
 import {
-  CONTROLS, USERS, PROJECTS,
+  CONTROLS as SEED_CONTROLS, USERS, PROJECTS,
   effectivenessBadge, controlTypeBadge, isOverdueControl, getControlsLibraryKpis,
   type Control, type ControlCategory, type ControlEffectiveness, type ControlStatus,
 } from '@/lib/governance-data'
+import { usePIPStore } from '@/hooks/use-pip-store'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
 
@@ -215,6 +216,7 @@ function ControlDrawer({ control, onClose, onScheduleAudit }: { control: Control
 
 export default function ControlsLibraryPage() {
   const kpis = getControlsLibraryKpis()
+  const { state, updateControlOwner, recentActivity } = usePIPStore()
   const [search, setSearch] = React.useState('')
   const [filterCategory, setFilterCategory] = React.useState<ControlCategory | 'All'>('All')
   const [filterEffectiveness, setFilterEffectiveness] = React.useState<ControlEffectiveness | 'All'>('All')
@@ -223,6 +225,13 @@ export default function ControlsLibraryPage() {
   const [schedulerFor, setSchedulerFor] = React.useState<Control | null>(null)
   const [addSchedulerOpen, setAddSchedulerOpen] = React.useState(false)
   const [now] = React.useState(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
+
+  // Use live store controls (merged with seed for any missing entries)
+  const CONTROLS = Object.values(state.controls).length > 0 ? Object.values(state.controls) : SEED_CONTROLS
+
+  const controlActivity = recentActivity.filter(
+    (a) => a.kind === 'CONTROL_UPDATED' || a.kind === 'CONTROL_OWNER_CHANGED' || a.kind === 'CONTROL_TESTED'
+  ).slice(0, 5)
 
   const filtered = CONTROLS.filter((c) => {
     const q = search.toLowerCase()
@@ -488,6 +497,41 @@ export default function ControlsLibraryPage() {
             </table>
           </div>
         </div>
+        {/* ── Live Activity Trail ── */}
+        {controlActivity.length > 0 && (
+          <div className="bg-card rounded-xl border border-line p-4 shadow-sm">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-3 flex items-center gap-1.5">
+              <History className="w-3 h-3" /> Controls Activity — Who updated, who reviewed
+            </p>
+            <div className="space-y-2">
+              {controlActivity.map((act, i) => {
+                const timeAgo = Math.round((Date.now() - act.at) / 60000)
+                const label = timeAgo < 2 ? 'just now' : timeAgo < 60 ? `${timeAgo}m ago` : `${Math.round(timeAgo / 60)}h ago`
+                return (
+                  <div key={act.id} className="flex items-start gap-2.5">
+                    <div className="w-6 h-6 rounded-full bg-gold/20 border border-gold/35 flex items-center justify-center shrink-0 mt-0.5">
+                      <span className="text-[8px] font-bold text-gold">{act.actorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2)}</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-center">
+                        <span className="text-[11px] font-semibold text-foreground">{act.actorName} <span className="text-muted-foreground font-normal">({act.actorRole})</span></span>
+                        <span className="text-[9px] text-muted-foreground">{label}</span>
+                      </div>
+                      <p className="text-[10px] text-muted-foreground">{act.detail}</p>
+                      {act.affectedParties?.filter(Boolean).length > 0 && (
+                        <div className="flex gap-1 mt-0.5 flex-wrap">
+                          {act.affectedParties.filter(Boolean).slice(0, 3).map((p: string) => (
+                            <span key={p} className="text-[9px] px-1.5 py-0.5 rounded bg-secondary text-muted-foreground">{p}</span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── Slide-over drawer ── */}
