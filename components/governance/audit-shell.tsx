@@ -38,6 +38,7 @@ interface AuditShellProps {
   kpis: KPI[]
   currentUserRole?: string
   renderScheduleExtra?: (s: AuditSchedule) => React.ReactNode
+  extraContent?: React.ReactNode
 }
 
 function SchedulesTab({ schedules, type, renderExtra }: { schedules: AuditSchedule[]; type: AuditType; renderExtra?: (s: AuditSchedule) => React.ReactNode }) {
@@ -334,7 +335,7 @@ function CalendarTab({ occurrences }: { occurrences: AuditOccurrence[] }) {
 }
 
 export function AuditShell({
-  type, accentColor, accentBg, schedules, occurrences, kpis, currentUserRole, renderScheduleExtra,
+  type, accentColor, accentBg, schedules, occurrences, kpis, currentUserRole, renderScheduleExtra, extraContent,
 }: AuditShellProps) {
   const [tab, setTab] = React.useState<'schedules' | 'occurrences' | 'calendar'>('schedules')
   const tabs = [
@@ -406,6 +407,9 @@ export function AuditShell({
         {tab === 'occurrences' && <OccurrencesTab occurrences={occurrences} currentUserRole={currentUserRole} />}
         {tab === 'calendar' && <CalendarTab occurrences={occurrences} />}
       </motion.div>
+
+      {/* Extra content (compliance register, etc.) */}
+      {extraContent}
     </div>
   )
 }

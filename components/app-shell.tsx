@@ -45,6 +45,7 @@ import {
   ShieldCheck,
   Scale,
   ClipboardList,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAI } from '@/components/ai-provider'
@@ -88,6 +89,7 @@ const navSections: NavSection[] = [
       { label: 'Director Command View', icon: LayoutDashboard, href: '/' },
       { label: 'Risk Horizon', icon: AlertTriangle, href: '/risk', badge: 5 },
       { label: 'Controls & Auto-Audit', icon: ShieldCheck, href: '/controls', badge: 17 },
+      { label: 'Controls Library', icon: BookOpen, href: '/controls-library' },
       { label: 'Risk Audit', icon: ClipboardList, href: '/risk-audit', badge: 1 },
       { label: 'Compliance Audit', icon: Scale, href: '/compliance-audit', badge: 2 },
       { label: 'SLA Tracker', icon: Clock, href: '/sla', badge: 7 },
@@ -158,7 +160,7 @@ const personaAccess: Record<string, Set<string> | 'ALL'> = {
   // Portfolio Controls Lead — Operations Lead — Full Ops
   // Grayed: Annual Planning, Director Command View, Variance Explainer, Party Intelligence, Executive Deck
   'Hasit Chetal': new Set([
-    '/risk', '/controls', '/risk-audit', '/compliance-audit', '/sla',
+    '/risk', '/controls', '/controls-library', '/risk-audit', '/compliance-audit', '/sla',
     '/lead', '/funding', '/approval-pipeline', '/bdp-factcheck', '/termsheet',
     '/analyst', '/throughput', '/program', '/projects', '/milestones', '/inbox', '/budget', '/change-orders',
     '/concurrent-hub',
