@@ -5,9 +5,11 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { cn } from '@/lib/utils'
 import {
   Activity, CheckCircle2, XCircle, AlertTriangle, Clock,
-  User, ArrowUpRight, Play, Shield,
+  User, ArrowUpRight, Play, Shield, ClipboardCheck,
+  BarChart3, StickyNote, UserCog, Zap,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { PagePanel } from '@/components/page-panel'
 import { usePIPStore, CURRENT_USER } from '@/hooks/use-pip-store'
 import { USERS } from '@/lib/governance-data'
 
@@ -20,8 +22,8 @@ const RESULT_META = {
   NOT_TESTED: { icon: Clock, color: 'text-muted-foreground', bg: 'bg-secondary', border: 'border-line', label: 'Not Tested' },
 } as const
 
-// Quick test runner for a specific control
-function QuickTestRunner({ onClose }: { onClose: () => void }) {
+// Quick test runner — full-body PagePanel
+function QuickTestRunner({ open, onClose }: { open: boolean; onClose: () => void }) {
   const { state, runControlTest } = usePIPStore()
   const controls = Object.values(state.controls)
   const [controlId, setControlId] = React.useState(controls[0]?.id ?? '')
@@ -29,6 +31,16 @@ function QuickTestRunner({ onClose }: { onClose: () => void }) {
   const [score, setScore] = React.useState(85)
   const [notes, setNotes] = React.useState('')
   const [reviewerId, setReviewerId] = React.useState('')
+
+  const selectedCtrl = state.controls[controlId]
+
+  const RESULT_OPTS = [
+    { value: 'PASS', label: 'Pass', icon: CheckCircle2, color: 'text-green', bg: 'bg-green/6', border: 'border-green/25' },
+    { value: 'PARTIAL', label: 'Partial', icon: AlertTriangle, color: 'text-amber', bg: 'bg-amber/6', border: 'border-amber/25' },
+    { value: 'FAIL', label: 'Fail', icon: XCircle, color: 'text-red', bg: 'bg-red/6', border: 'border-red/25' },
+  ] as const
+
+  const selectedResult = RESULT_OPTS.find((r) => r.value === result)!
 
   const handle = () => {
     const ctrl = state.controls[controlId]
@@ -49,61 +61,172 @@ function QuickTestRunner({ onClose }: { onClose: () => void }) {
     onClose()
   }
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }}
-        className="bg-card border border-line rounded-2xl shadow-2xl w-full max-w-md p-6 mx-4">
-        <h3 className="text-sm font-semibold text-foreground mb-4">Run Control Test</h3>
+  const footer = (
+    <div className="flex items-center justify-between gap-3">
+      <p className="text-[11px] text-muted-foreground flex items-center gap-1.5">
+        <ClipboardCheck className="w-3.5 h-3.5 text-gold" />
+        Result will be logged to the audit trail immediately.
+      </p>
+      <div className="flex items-center gap-2 shrink-0">
+        <Button variant="outline" size="sm" className="h-9 px-5 border-line text-[12px]" onClick={onClose}>Cancel</Button>
+        <Button size="sm" className="h-9 px-6 bg-gold text-navy font-semibold gap-1.5 text-[12px]" onClick={handle}>
+          <Zap className="w-3.5 h-3.5" />
+          Record Test Run
+        </Button>
+      </div>
+    </div>
+  )
 
-        <div className="space-y-3 mb-4">
+  return (
+    <PagePanel
+      open={open}
+      onClose={onClose}
+      title="Run Control Test"
+      description="Record a manual or agent-assisted test run against a specific control. Results post to the audit trail."
+      footer={footer}
+    >
+      <div className="grid grid-cols-1 xl:grid-cols-2 divide-y xl:divide-y-0 xl:divide-x divide-line">
+
+        {/* LEFT — control + scoring ── */}
+        <div className="px-6 py-6 space-y-6">
+
+          {/* Control selector */}
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Control</label>
+            <FieldLabel icon={ClipboardCheck}>Control being tested</FieldLabel>
             <select value={controlId} onChange={(e) => setControlId(e.target.value)}
-              className="w-full text-xs border border-line rounded-lg px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-gold/60">
-              {controls.map((c) => <option key={c.id} value={c.id}>{c.id} — {c.name.slice(0, 50)}</option>)}
+              className="w-full mt-2 h-10 px-3 text-[12px] border border-line rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-gold/40 transition-all">
+              {controls.map((c) => <option key={c.id} value={c.id}>{c.id} — {c.name.slice(0, 55)}</option>)}
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
-            <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Result</label>
-              <select value={result} onChange={(e) => setResult(e.target.value as typeof result)}
-                className="w-full text-xs border border-line rounded-lg px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-gold/60">
-                <option value="PASS">Pass</option>
-                <option value="PARTIAL">Partial</option>
-                <option value="FAIL">Fail</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Score (0–100)</label>
-              <input type="number" min={0} max={100} value={score} onChange={(e) => setScore(Number(e.target.value))}
-                className="w-full text-xs border border-line rounded-lg px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-gold/60" />
+          {/* Selected control info */}
+          {selectedCtrl && (
+            <motion.div
+              key={controlId}
+              initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }}
+              className="rounded-2xl border border-line bg-secondary/40 p-4 space-y-2"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Control details</p>
+              <p className="text-[13px] font-semibold text-foreground">{selectedCtrl.name}</p>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <div>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Category</p>
+                  <p className="text-[11px] text-foreground">{selectedCtrl.category}</p>
+                </div>
+                <div>
+                  <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold">Owner</p>
+                  <p className="text-[11px] text-foreground">{selectedCtrl.ownerName ?? '—'}</p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Result */}
+          <div>
+            <FieldLabel icon={selectedResult.icon}>Result</FieldLabel>
+            <div className="grid grid-cols-3 gap-2 mt-2">
+              {RESULT_OPTS.map((opt) => {
+                const on = result === opt.value
+                return (
+                  <button key={opt.value} onClick={() => setResult(opt.value)}
+                    className={cn(
+                      'flex flex-col items-center gap-1 py-3 rounded-xl border text-center transition-all',
+                      on ? `${opt.bg} ${opt.border} scale-105 shadow-sm` : 'bg-secondary border-line hover:border-gold/40',
+                    )}>
+                    <opt.icon className={cn('w-4 h-4', on ? opt.color : 'text-muted-foreground')} />
+                    <span className={cn('text-[11px] font-semibold', on ? opt.color : 'text-muted-foreground')}>{opt.label}</span>
+                  </button>
+                )
+              })}
             </div>
           </div>
 
+          {/* Score */}
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Reviewer</label>
+            <FieldLabel icon={BarChart3}>Score (0–100)</FieldLabel>
+            <div className="mt-2 flex items-center gap-3">
+              <input type="range" min={0} max={100} value={score}
+                onChange={(e) => setScore(Number(e.target.value))}
+                className="flex-1 h-2 accent-gold cursor-pointer" />
+              <div className={cn(
+                'w-14 text-center rounded-xl border py-1.5 text-[14px] font-bold',
+                score >= 80 ? 'bg-green/8 border-green/25 text-green'
+                : score >= 60 ? 'bg-amber/8 border-amber/25 text-amber'
+                : 'bg-red/8 border-red/25 text-red',
+              )}>
+                {score}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* RIGHT — reviewer + notes ── */}
+        <div className="px-6 py-6 space-y-6">
+
+          {/* Tester */}
+          <div>
+            <FieldLabel icon={User}>Tested by</FieldLabel>
+            <div className="mt-2 flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border border-line bg-secondary/40">
+              <div className="w-7 h-7 rounded-full bg-gold/20 border border-gold/35 flex items-center justify-center shrink-0">
+                <span className="text-[9px] font-bold text-gold">{CURRENT_USER.name.split(' ').map((n) => n[0]).join('')}</span>
+              </div>
+              <div>
+                <p className="text-[12px] font-semibold text-foreground">{CURRENT_USER.name}</p>
+                <p className="text-[10px] text-muted-foreground">{CURRENT_USER.role}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* Reviewer */}
+          <div>
+            <FieldLabel icon={UserCog}>Reviewer <span className="text-muted-foreground font-normal normal-case text-[10px]">(optional)</span></FieldLabel>
             <select value={reviewerId} onChange={(e) => setReviewerId(e.target.value)}
-              className="w-full text-xs border border-line rounded-lg px-3 py-2 bg-background text-foreground focus:outline-none focus:ring-1 focus:ring-gold/60">
+              className="w-full mt-2 h-10 px-3 text-[12px] border border-line rounded-xl bg-background focus:outline-none focus:ring-2 focus:ring-gold/40 transition-all">
               <option value="">— None —</option>
               {USERS.map((u) => <option key={u.id} value={u.id}>{u.name} ({u.role})</option>)}
             </select>
           </div>
 
-          <div>
-            <label className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground block mb-1">Notes</label>
-            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2}
-              placeholder="Describe findings or observations..."
-              className="w-full text-xs border border-line rounded-lg px-3 py-2 bg-background text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-gold/60" />
+          {/* Notes */}
+          <div className="flex-1">
+            <FieldLabel icon={StickyNote}>Notes & findings</FieldLabel>
+            <textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={6}
+              placeholder="Describe test findings, observations, evidence reviewed, and any exceptions noted…"
+              className="w-full mt-2 px-3.5 py-2.5 text-[12px] border border-line rounded-xl bg-background placeholder:text-muted-foreground/40 focus:outline-none focus:ring-2 focus:ring-gold/40 transition-all resize-none leading-relaxed" />
           </div>
-        </div>
 
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1" onClick={onClose}>Cancel</Button>
-          <Button size="sm" className="flex-1 bg-gold text-navy" onClick={handle}>Record Test Run</Button>
+          {/* Live score preview */}
+          <motion.div
+            key={`${result}-${score}`}
+            initial={{ opacity: 0.6, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.2 }}
+            className={cn(
+              'rounded-2xl border p-4 flex items-center justify-between',
+              selectedResult.bg, selectedResult.border,
+            )}
+          >
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Outcome preview</p>
+              <p className={cn('text-[16px] font-bold mt-0.5', selectedResult.color)}>{selectedResult.label}</p>
+            </div>
+            <div className="text-right">
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">Score</p>
+              <p className={cn('text-[22px] font-bold', selectedResult.color)}>{score}</p>
+            </div>
+          </motion.div>
         </div>
-      </motion.div>
-    </div>
+      </div>
+    </PagePanel>
+  )
+}
+
+/* ── Shared label helper ── */
+function FieldLabel({ icon: Icon, children }: { icon: React.ElementType; children: React.ReactNode }) {
+  return (
+    <label className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.14em]">
+      <Icon className="w-3 h-3" />
+      {children}
+    </label>
   )
 }
 
@@ -212,9 +335,7 @@ export function ControlsActivityPanel() {
         </div>
       </div>
 
-      <AnimatePresence>
-        {showRunner && <QuickTestRunner onClose={() => setShowRunner(false)} />}
-      </AnimatePresence>
+      <QuickTestRunner open={showRunner} onClose={() => setShowRunner(false)} />
     </>
   )
 }
