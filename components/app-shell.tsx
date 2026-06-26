@@ -90,9 +90,15 @@ const navSections: NavSection[] = [
       { label: 'Risk Horizon', icon: AlertTriangle, href: '/risk', badge: 5 },
       { label: 'Controls & Auto-Audit', icon: ShieldCheck, href: '/controls', badge: 17 },
       { label: 'Controls Library', icon: BookOpen, href: '/controls-library' },
+      { label: 'SLA Tracker', icon: Clock, href: '/sla', badge: 7 },
+    ],
+  },
+  {
+    title: 'GOVERNANCE & AUDIT',
+    items: [
+      { label: 'Controls Audit', icon: ShieldCheck, href: '/controls-audit', badge: 3 },
       { label: 'Risk Audit', icon: ClipboardList, href: '/risk-audit', badge: 1 },
       { label: 'Compliance Audit', icon: Scale, href: '/compliance-audit', badge: 2 },
-      { label: 'SLA Tracker', icon: Clock, href: '/sla', badge: 7 },
     ],
   },
   {
@@ -160,7 +166,11 @@ const personaAccess: Record<string, Set<string> | 'ALL'> = {
   // Portfolio Controls Lead — Operations Lead — Full Ops
   // Grayed: Annual Planning, Director Command View, Variance Explainer, Party Intelligence, Executive Deck
   'Hasit Chetal': new Set([
-    '/risk', '/controls', '/controls-library', '/risk-audit', '/compliance-audit', '/sla',
+    '/risk', '/controls', '/controls-library',
+    '/controls-audit', '/controls-audit/schedule',
+    '/risk-audit', '/risk-audit/schedule',
+    '/compliance-audit', '/compliance-audit/schedule',
+    '/sla',
     '/lead', '/funding', '/approval-pipeline', '/bdp-factcheck', '/termsheet',
     '/analyst', '/throughput', '/program', '/projects', '/milestones', '/inbox', '/budget', '/change-orders',
     '/concurrent-hub',
