@@ -660,7 +660,7 @@ export function AppShell({ children, title = 'Director Command View', subtitle, 
         </header>
 
         {/* Page Content */}
-        <main className="flex-1 overflow-auto px-2 py-3 sm:px-3 sm:py-4 lg:px-4 lg:py-5 bg-background">
+        <main className="relative flex-1 overflow-auto px-2 py-3 sm:px-3 sm:py-4 lg:px-4 lg:py-5 bg-background">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}
