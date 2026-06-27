@@ -38,9 +38,9 @@ export interface PIPUser {
 
 export const USERS: PIPUser[] = [
   { id: 'USR-001', name: 'Brian Smith', initials: 'BS', role: 'Portfolio Director', email: 'b.smith@pip.internal', region: 'Global' },
-  { id: 'USR-002', name: 'Anu Reddi', initials: 'AR', role: 'Senior Director', email: 'a.reddi@pip.internal', region: 'Global' },
+  { id: 'USR-002', name: 'Anu Reddy', initials: 'AR', role: 'Senior Director', email: 'a.reddy@pip.internal', region: 'Global' },
   { id: 'USR-003', name: 'Hasit Chetal', initials: 'HC', role: 'Portfolio Controls Lead', email: 'h.chetal@pip.internal', region: 'Global' },
-  { id: 'USR-004', name: 'Sophia Lamb', initials: 'SL', role: 'Control Owner', email: 's.lamb@pip.internal', region: 'NA-East' },
+  { id: 'USR-004', name: 'Sophia Lam', initials: 'SL', role: 'Control Owner', email: 's.lam@pip.internal', region: 'NA-East' },
   { id: 'USR-005', name: 'Alice Cox', initials: 'AC', role: 'Control Owner', email: 'a.cox@pip.internal', region: 'NA-West' },
   { id: 'USR-006', name: 'Sreya Mukherjee', initials: 'SM', role: 'Risk Owner', email: 's.mukherjee@pip.internal', region: 'NA-East' },
   { id: 'USR-007', name: 'Daniel Cho', initials: 'DC', role: 'Auditor', email: 'd.cho@pip.internal', region: 'NA-West' },
