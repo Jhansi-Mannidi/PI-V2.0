@@ -164,7 +164,7 @@ const varianceCards: VarianceCard[] = [
     detection: 'Step duration anomaly',
     detectionAgent: 'SLA Sentinel',
     narrative: 'FP&A requested additional justification documents for phased funding approach. Documentation submitted May 14.',
-    attributedTo: 'Sophia Lamb',
+    attributedTo: 'Sophia Lam',
     actions: [{ label: 'Follow up with FP&A' }],
   },
   {

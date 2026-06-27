@@ -533,7 +533,7 @@ export default function BDPFactCheckPage() {
                   className="mt-0.5"
                 />
                 <span className="text-[11px] text-foreground leading-relaxed">
-                  I attest that <span className="font-semibold">Brian Smith / Anu Reddi</span> has
+                  I attest that <span className="font-semibold">Brian Smith / Anu Reddy</span> has
                   authorized proceeding without BDP update. This attestation is logged to the
                   audit trail.
                 </span>
@@ -750,7 +750,7 @@ function ResolutionPanel({
           </h4>
           {isReadOnly && (
             <span className="inline-flex items-center gap-1 px-2 h-5 text-[10px] font-medium rounded bg-secondary text-muted-foreground border border-line">
-              <Eye className="w-3 h-3" /> Read-only — Sophia Lamb (Finance Partner)
+              <Eye className="w-3 h-3" /> Read-only — Sophia Lam (Finance Partner)
             </span>
           )}
           {isResolved && (
@@ -778,7 +778,7 @@ function ResolutionPanel({
           />
           <ActionButton
             icon={Send}
-            label="Escalate to Sophia Lamb"
+            label="Escalate to Sophia Lam"
             description="Finance pre-approval"
             disabled={isReadOnly || isResolved}
           />

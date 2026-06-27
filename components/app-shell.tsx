@@ -147,10 +147,10 @@ const navSections: NavSection[] = [
 
 const personas = [
   { name: 'Brian Smith', role: 'Portfolio Director', initials: 'BS', color: 'gold' },
-  { name: 'Anu Reddi', role: 'Senior Director — Portfolio Approver', initials: 'AR', color: 'gold' },
+  { name: 'Anu Reddy', role: 'Senior Director — Portfolio Approver', initials: 'AR', color: 'gold' },
   { name: 'Hasit Chetal', role: 'Portfolio Controls Lead', initials: 'HC', color: 'gold' },
   { name: 'Brian Steinberg', role: 'Program Manager — Central', initials: 'BS', color: 'gold' },
-  { name: 'Sophia Lamb', role: 'Finance Partner — FP&A', initials: 'SL', color: 'gold' },
+  { name: 'Sophia Lam', role: 'Finance Partner — FP&A', initials: 'SL', color: 'gold' },
   { name: 'Sreya Mukherjee', role: 'LineSight — Operational Staff', initials: 'SM', color: 'gold' },
 ]
 
@@ -161,7 +161,7 @@ const personaAccess: Record<string, Set<string> | 'ALL'> = {
   'Brian Smith': 'ALL',
 
   // Senior Director — Final Approver — Full Access (read-and-approve focus)
-  'Anu Reddi': 'ALL',
+  'Anu Reddy': 'ALL',
 
   // Portfolio Controls Lead — Operations Lead — Full Ops
   // Grayed: Annual Planning, Director Command View, Variance Explainer, Party Intelligence, Executive Deck
@@ -192,7 +192,7 @@ const personaAccess: Record<string, Set<string> | 'ALL'> = {
   ]),
 
   // Finance Partner (FP&A) — Funding-Cycle Scope
-  'Sophia Lamb': new Set([
+  'Sophia Lam': new Set([
     '/funding', '/approval-pipeline', '/bdp-factcheck', '/termsheet',
     '/budget', '/change-orders', '/sla',
     '/insights', '/reports',

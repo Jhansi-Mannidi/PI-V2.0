@@ -70,7 +70,7 @@ const pastSLADetails = [
   { id: 'D5', process: 'Change Order Approval', project: 'ADC-Hub1-3', owner: 'Lauren Culp', stage: 'PgM signoff', timePast: '4d', lastActivity: 'May 14: CO submitted', autoAction: false, actionText: 'Notification sent' },
   { id: 'D6', process: 'PO Workflow Initiation', project: 'NCH-Hub1-1', owner: 'LS Team', stage: 'Initial review', timePast: '3d', lastActivity: 'May 15: assigned', autoAction: true, actionText: 'Reminder sent' },
   { id: 'D7', process: 'RFI Lifecycle', project: 'HDL-Hub1-2', owner: 'Field team', stage: 'Awaiting response', timePast: '2d', lastActivity: 'May 16: follow-up', autoAction: false, actionText: 'Pending' },
-  { id: 'D8', process: 'Milestone Gate Review', project: 'CHB-Hub1-1', owner: 'Sophia Lamb', stage: 'Gate 3 review', timePast: '2d', lastActivity: 'May 15: docs uploaded', autoAction: true, actionText: 'Escalated to PM' },
+  { id: 'D8', process: 'Milestone Gate Review', project: 'CHB-Hub1-1', owner: 'Sophia Lam', stage: 'Gate 3 review', timePast: '2d', lastActivity: 'May 15: docs uploaded', autoAction: true, actionText: 'Escalated to PM' },
 ]
 
 // 13-week trend data
