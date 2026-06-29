@@ -2,15 +2,27 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import { ArrowLeft, Scale, ChevronRight, Loader2, CalendarDays, Users, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
-import { Button } from '@/components/ui/button'
-import { 
-  PROJECTS, USERS, COMPLIANCE_ITEMS, type Frequency,
+import { cn } from '@/lib/utils'
+import {
+  PROJECTS, USERS, COMPLIANCE_ITEMS, type Frequency, type AuditSchedule,
 } from '@/lib/governance-data'
 
 const FREQUENCIES: Frequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Quarterly', 'Semi-Annual', 'Annual', 'Custom']
+const LS_KEY = 'compliance_audit_schedules_user'
+const ease = [0.25, 0.1, 0.25, 1]
+
+function loadUserSchedules(): AuditSchedule[] {
+  if (typeof window === 'undefined') return []
+  try { return JSON.parse(localStorage.getItem(LS_KEY) ?? '[]') } catch { return [] }
+}
+
+function saveUserSchedule(s: AuditSchedule) {
+  const existing = loadUserSchedules()
+  localStorage.setItem(LS_KEY, JSON.stringify([...existing, s]))
+}
 
 export default function ComplianceAuditSchedulePage() {
   const router = useRouter()
@@ -23,81 +35,234 @@ export default function ComplianceAuditSchedulePage() {
     time: '09:00',
     projectIds: [] as string[],
     complianceIds: [] as string[],
-    notes: '',
   })
+
+  // live progress for the left panel step tracker
+  const filled = [
+    !!formData.name,
+    !!formData.auditorId,
+    formData.complianceIds.length > 0,
+  ]
+  const completedCount = filled.filter(Boolean).length
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    const existing = loadUserSchedules()
+    const nextIndex = 206 + existing.length
+    const id = `AS-${nextIndex}`
+
+    const auditor = USERS.find(u => u.id === formData.auditorId)
+    const owner = USERS.find(u => u.id !== formData.auditorId) ?? USERS[0]
+
+    const newSchedule: AuditSchedule = {
+      id,
+      name: formData.name,
+      type: 'compliance',
+      scopeProjects: formData.projectIds,
+      scopeItemIds: formData.complianceIds,
+      frequency: formData.frequency,
+      startDate: formData.startDate,
+      time: formData.time,
+      timezone: 'UTC',
+      assignedAuditorId: formData.auditorId,
+      assignedAuditorName: auditor?.name ?? 'Unknown',
+      accountableOwnerId: owner.id,
+      accountableOwnerName: owner.name,
+      reminderLeadDays: 3,
+      graceDays: 2,
+      status: 'Active',
+      nextRun: formData.startDate,
+      lastRun: null,
+    }
+
+    saveUserSchedule(newSchedule)
     router.push('/compliance-audit')
   }
 
+  const inputCls = 'w-full px-3 py-2 rounded-lg border border-line bg-background text-foreground text-[12.5px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold/50 transition-all'
+  const selectCls = inputCls
+
+  const steps = [
+    { label: 'Audit details', icon: CalendarDays, done: filled[0] },
+    { label: 'Scope & obligations', icon: Scale, done: filled[2] },
+    { label: 'Assign & schedule', icon: Users, done: filled[1] },
+  ]
+
   return (
     <AppShell>
-      <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-40 border-b border-line bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.back()}
-                className="p-2 hover:bg-secondary rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Schedule Compliance Audit</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">Create a new recurring compliance audit schedule</p>
-              </div>
-            </div>
-          </div>
+      <div className="flex flex-col h-full bg-background">
+
+        {/* ── BREADCRUMB HEADER ── */}
+        <div className="flex items-center gap-2 px-6 py-3.5 border-b border-line bg-card text-[12px] text-muted-foreground shrink-0">
+          <button onClick={() => router.back()} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
+            <ArrowLeft className="w-3.5 h-3.5" />
+            Controls Audit
+          </button>
+          <ChevronRight className="w-3 h-3 opacity-40" />
+          <span className="text-foreground font-medium">New Audit Schedule</span>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-3xl mx-auto p-6">
-          <motion.form
-            onSubmit={handleSubmit}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-          >
-            {/* Basic Info */}
-            <div className="bg-card border border-line rounded-2xl p-6 space-y-5">
-              <div>
-                <h2 className="text-sm font-bold text-foreground uppercase tracking-wide mb-4">Audit Details</h2>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Audit Name</label>
+        {/* ── TWO-COLUMN BODY ── */}
+        <div className="flex flex-1 overflow-hidden">
+
+          {/* ── LEFT PANEL ── */}
+          <div className="w-80 shrink-0 border-r border-line bg-card flex flex-col gap-5 px-5 py-6 overflow-y-auto">
+
+            {/* Identity card */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, ease }}
+              className="rounded-xl border border-gold/30 bg-gold/5 p-4"
+            >
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-9 h-9 rounded-lg bg-gold/15 flex items-center justify-center shrink-0">
+                  <Scale className="w-4.5 h-4.5 text-gold" />
+                </div>
+                <div>
+                  <span className="text-[9px] font-bold uppercase tracking-widest text-gold bg-gold/15 border border-gold/25 px-2 py-0.5 rounded-full">New Schedule</span>
+                </div>
+              </div>
+              <p className="text-[13px] font-bold text-foreground leading-snug">Schedule Compliance Audit</p>
+              <p className="text-[11px] text-muted-foreground mt-1 leading-relaxed">
+                Create a recurring compliance audit schedule for regulatory and contractual obligations across projects.
+              </p>
+            </motion.div>
+
+            {/* Scope stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: 0.05, ease }}
+              className="rounded-xl border border-line bg-background p-4 space-y-2.5"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <ShieldCheck className="w-3.5 h-3.5" /> Scope
+              </p>
+              {[
+                { label: 'Available Requirements', value: COMPLIANCE_ITEMS.length },
+                { label: 'Selected Requirements', value: formData.complianceIds.length, highlight: formData.complianceIds.length > 0 },
+                { label: 'Available Auditors', value: USERS.filter(u => u.role === 'Auditor' || u.role === 'Legal').length },
+                { label: 'Available Projects', value: PROJECTS.length },
+              ].map(stat => (
+                <div key={stat.label} className="flex items-center justify-between">
+                  <span className="text-[11px] text-muted-foreground">{stat.label}</span>
+                  <span className={cn('text-[12px] font-bold font-mono', stat.highlight ? 'text-gold' : 'text-foreground')}>{stat.value}</span>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Step tracker */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: 0.1, ease }}
+              className="rounded-xl border border-line bg-background p-4 space-y-3"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
+                <CalendarDays className="w-3.5 h-3.5" /> Steps
+              </p>
+              {steps.map((step, i) => (
+                <div key={step.label} className="flex items-center gap-2.5">
+                  <div className={cn(
+                    'w-5 h-5 rounded-full border-2 flex items-center justify-center shrink-0 transition-all',
+                    step.done ? 'border-gold bg-gold/15' : 'border-line bg-background'
+                  )}>
+                    {step.done
+                      ? <div className="w-2 h-2 rounded-full bg-gold" />
+                      : <span className="text-[9px] text-muted-foreground font-bold">{i + 1}</span>
+                    }
+                  </div>
+                  <span className={cn('text-[12px] transition-colors', step.done ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+                    {step.label}
+                  </span>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Audit trail note */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.25, delay: 0.15, ease }}
+              className="rounded-xl border border-line bg-background p-3.5 flex items-start gap-2.5"
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <p className="text-[10.5px] text-muted-foreground leading-relaxed">
+                This schedule is logged to the immutable audit trail with timestamp, actor, and all field values.
+              </p>
+            </motion.div>
+          </div>
+
+          {/* ── RIGHT: FORM ── */}
+          <div className="flex-1 overflow-y-auto px-8 py-6">
+            <motion.form
+              onSubmit={handleSubmit}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: 0.06 }}
+              className="w-full space-y-5"
+            >
+              {/* Form header */}
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <h1 className="text-[18px] font-bold text-foreground leading-snug">Audit Details</h1>
+                  <p className="text-[11.5px] text-muted-foreground mt-0.5">Complete all required fields to create the schedule</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-32 h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gold transition-all duration-500"
+                      style={{ width: `${(completedCount / 3) * 100}%` }}
+                    />
+                  </div>
+                  <span className="text-[11px] text-muted-foreground font-mono">{completedCount}/3</span>
+                </div>
+              </div>
+
+              {/* ── AUDIT DETAILS SECTION ── */}
+              <div className="bg-card rounded-xl border border-line shadow-sm overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-line flex items-center gap-2">
+                  <CalendarDays className="w-3.5 h-3.5 text-gold" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gold">Audit Details</span>
+                </div>
+                <div className="p-5 space-y-4">
+                  {/* Audit Name */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      Audit Name <span className="text-gold">*</span>
+                    </label>
                     <input
                       type="text"
-                      placeholder="e.g., SOX Compliance Assessment"
+                      placeholder="e.g., Q3 Approval Authority Controls"
                       value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-teal/50 transition-all"
+                      onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                      className={inputCls}
+                      required
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">Frequency</label>
+                  {/* Frequency + Auditor */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" /> Frequency
+                      </label>
                       <select
                         value={formData.frequency}
-                        onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as Frequency }))}
-                        className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-teal/50 transition-all"
+                        onChange={e => setFormData(p => ({ ...p, frequency: e.target.value as Frequency }))}
+                        className={selectCls}
                       >
-                        {FREQUENCIES.map(f => (
-                          <option key={f} value={f}>{f}</option>
-                        ))}
+                        {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
                       </select>
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">Assigned Auditor</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                        <Users className="w-3 h-3" /> Assigned Auditor <span className="text-gold">*</span>
+                      </label>
                       <select
                         value={formData.auditorId}
-                        onChange={(e) => setFormData(prev => ({ ...prev, auditorId: e.target.value }))}
-                        className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-teal/50 transition-all"
+                        onChange={e => setFormData(p => ({ ...p, auditorId: e.target.value }))}
+                        className={selectCls}
                       >
                         <option value="">Select auditor...</option>
                         {USERS.filter(u => u.role === 'Auditor' || u.role === 'Legal').map(u => (
@@ -107,120 +272,159 @@ export default function ComplianceAuditSchedulePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">Start Date</label>
+                  {/* Start Date + Time */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                        <CalendarDays className="w-3 h-3" /> Start Date
+                      </label>
                       <input
                         type="date"
                         value={formData.startDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-teal/50 transition-all"
+                        onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))}
+                        className={inputCls}
                       />
                     </div>
-
-                    <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">Time</label>
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                        Time
+                      </label>
                       <input
                         type="time"
                         value={formData.time}
-                        onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
-                        className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-teal/50 transition-all"
+                        onChange={e => setFormData(p => ({ ...p, time: e.target.value }))}
+                        className={inputCls}
                       />
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Scope Selection */}
-            <div className="bg-card border border-line rounded-2xl p-6 space-y-5">
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wide">Audit Scope</h2>
-              
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-3">Select Compliance Requirements</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto p-2 border border-line rounded-lg bg-secondary/20">
-                  {COMPLIANCE_ITEMS.map(item => (
-                    <label key={item.id} className="flex items-center gap-3 p-2 hover:bg-secondary/40 rounded-lg cursor-pointer transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.complianceIds.includes(item.id)}
-                        onChange={(e) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            complianceIds: e.target.checked
-                              ? [...prev.complianceIds, item.id]
-                              : prev.complianceIds.filter(id => id !== item.id)
-                          }))
-                        }}
-                        className="w-4 h-4 rounded border-line"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{item.requirement}</p>
-                        <p className="text-xs text-muted-foreground truncate">{item.id} · {item.framework}</p>
-                      </div>
+              {/* ── AUDIT SCOPE SECTION ── */}
+              <div className="bg-card rounded-xl border border-line shadow-sm overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-line flex items-center gap-2">
+                  <Scale className="w-3.5 h-3.5 text-gold" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gold">Audit Scope</span>
+                  <span className="text-gold">*</span>
+                </div>
+                <div className="p-5 space-y-4">
+                  {/* Compliance requirements */}
+                  <div className="space-y-2">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Select Compliance Requirements
                     </label>
-                  ))}
+                    <div className="grid grid-cols-3 gap-1.5 max-h-52 overflow-y-auto rounded-lg border border-line bg-secondary/20 p-2">
+                      {COMPLIANCE_ITEMS.map(item => {
+                        const checked = formData.complianceIds.includes(item.id)
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setFormData(p => ({
+                              ...p,
+                              complianceIds: checked
+                                ? p.complianceIds.filter(id => id !== item.id)
+                                : [...p.complianceIds, item.id]
+                            }))}
+                            className={cn(
+                              'flex items-start gap-2 p-2.5 rounded-lg border text-left transition-all',
+                              checked
+                                ? 'border-gold/40 bg-gold/8 shadow-sm'
+                                : 'border-transparent bg-background hover:border-line'
+                            )}
+                          >
+                            <div className={cn(
+                              'w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-all',
+                              checked ? 'border-gold bg-gold' : 'border-line bg-background'
+                            )}>
+                              {checked && <div className="w-1.5 h-1.5 rounded-sm bg-background" />}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[11px] font-medium text-foreground leading-snug line-clamp-2">{item.requirement}</p>
+                              <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{item.id} · {item.framework}</p>
+                            </div>
+                          </button>
+                        )
+                      })}
+                    </div>
+                    {formData.complianceIds.length > 0 && (
+                      <p className="text-[11px] text-gold font-medium">
+                        {formData.complianceIds.length} requirement{formData.complianceIds.length !== 1 ? 's' : ''} selected
+                      </p>
+                    )}
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-3">Select Projects (Optional)</label>
-                <select
-                  multiple
-                  value={formData.projectIds}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    projectIds: Array.from(e.target.selectedOptions, option => option.value)
-                  }))}
-                  className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-teal/50 transition-all min-h-32"
+              {/* ── ASSIGN & SCHEDULE SECTION ── */}
+              <div className="bg-card rounded-xl border border-line shadow-sm overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-line flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5 text-gold" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-gold">Select Projects</span>
+                  <span className="text-[10px] text-muted-foreground">(Optional)</span>
+                </div>
+                <div className="p-5">
+                  <div className="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto rounded-lg border border-line bg-secondary/20 p-2">
+                    {PROJECTS.map(proj => {
+                      const checked = formData.projectIds.includes(proj.id)
+                      return (
+                        <button
+                          key={proj.id}
+                          type="button"
+                          onClick={() => setFormData(p => ({
+                            ...p,
+                            projectIds: checked
+                              ? p.projectIds.filter(id => id !== proj.id)
+                              : [...p.projectIds, proj.id]
+                          }))}
+                          className={cn(
+                            'flex items-center gap-2 p-2.5 rounded-lg border text-left transition-all',
+                            checked
+                              ? 'border-gold/40 bg-gold/8 shadow-sm'
+                              : 'border-transparent bg-background hover:border-line'
+                          )}
+                        >
+                          <div className={cn(
+                            'w-3.5 h-3.5 rounded border-2 flex items-center justify-center shrink-0 transition-all',
+                            checked ? 'border-gold bg-gold' : 'border-line bg-background'
+                          )}>
+                            {checked && <div className="w-1.5 h-1.5 rounded-sm bg-background" />}
+                          </div>
+                          <span className="text-[11.5px] font-medium text-foreground">{proj.name}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+
+              {/* ── ACTIONS ── */}
+              <div className="flex items-center justify-between gap-4 pt-2">
+                <button
+                  type="button"
+                  onClick={() => router.back()}
+                  className="px-5 py-2 rounded-lg border border-line bg-background text-[12.5px] font-medium text-foreground hover:bg-secondary transition-colors"
                 >
-                  {PROJECTS.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isLoading || !formData.name || !formData.auditorId || formData.complianceIds.length === 0}
+                  className={cn(
+                    'flex items-center gap-2 px-6 py-2 rounded-lg text-[12.5px] font-semibold transition-all',
+                    isLoading || !formData.name || !formData.auditorId || formData.complianceIds.length === 0
+                      ? 'bg-gold/40 text-background cursor-not-allowed'
+                      : 'bg-gold hover:bg-gold/90 text-background shadow-sm'
+                  )}
+                >
+                  {isLoading
+                    ? <><Loader2 className="w-3.5 h-3.5 animate-spin" /> Creating...</>
+                    : <><Scale className="w-3.5 h-3.5" /> Create Schedule</>
+                  }
+                </button>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Notes (Optional)</label>
-                <textarea
-                  placeholder="Add any special instructions or context for this audit..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-teal/50 transition-all resize-none"
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-between gap-4 pt-4 border-t border-line">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                className="px-6"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading || !formData.name || !formData.auditorId || formData.complianceIds.length === 0}
-                className="px-6 bg-teal hover:bg-teal/90 text-foreground font-semibold"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Create Schedule
-                  </>
-                )}
-              </Button>
-            </div>
-          </motion.form>
+            </motion.form>
+          </div>
         </div>
       </div>
     </AppShell>

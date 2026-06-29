@@ -19,8 +19,23 @@ import {
   type ComplianceItem,
 } from '@/lib/governance-data'
 
+const LS_KEY = 'compliance_audit_schedules_user'
+
 export default function ComplianceAuditPage() {
   const kpis = getComplianceAuditKpis()
+
+  const [userSchedules, setUserSchedules] = React.useState<AuditSchedule[]>([])
+
+  React.useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(LS_KEY) ?? '[]') as AuditSchedule[]
+      setUserSchedules(stored)
+    } catch {
+      setUserSchedules([])
+    }
+  }, [])
+
+  const allSchedules = [...COMPLIANCE_AUDIT_SCHEDULES, ...userSchedules]
 
   const kpiData = [
     { label: 'Compliant', value: kpis.compliant, sub: 'of ' + kpis.total, icon: CheckCircle2, tone: 'green' as const },
@@ -146,7 +161,7 @@ export default function ComplianceAuditPage() {
                 Are we meeting all regulatory, contractual, and internal compliance obligations on schedule?
               </h2>
               <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                {COMPLIANCE_AUDIT_SCHEDULES.length} compliance schedules · {COMPLIANCE_ITEMS.length} tracked obligations · {kpis.openFindings} open findings
+                {allSchedules.length} compliance schedules · {COMPLIANCE_ITEMS.length} tracked obligations · {kpis.openFindings} open findings
               </p>
             </div>
           </div>
@@ -158,7 +173,7 @@ export default function ComplianceAuditPage() {
           accentBg="bg-teal"
           accentBorder="border-teal"
           schedulePageHref="/compliance-audit/schedule"
-          schedules={COMPLIANCE_AUDIT_SCHEDULES}
+          schedules={allSchedules}
           occurrences={COMPLIANCE_AUDIT_OCCURRENCES}
           kpis={kpiData}
           renderScheduleExtra={renderScopeCell}
