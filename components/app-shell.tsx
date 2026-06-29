@@ -586,6 +586,38 @@ export function AppShell({ children, title = 'Director Command View', subtitle, 
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Role Selector - hidden on small screens */}
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-8 px-3 rounded-md text-xs font-medium border border-border bg-background hover:bg-accent transition-colors flex items-center gap-2 whitespace-nowrap">
+                    <span className="text-muted-foreground">{currentPersona.role}</span>
+                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[280px]">
+                  {personas.map((persona) => (
+                    <DropdownMenuItem 
+                      key={persona.name} 
+                      onClick={() => setCurrentPersona(persona)} 
+                      className="flex items-center gap-3 cursor-pointer py-2"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center shrink-0">
+                        <span className="text-[9px] font-bold text-gold">{persona.initials}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-medium">{persona.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{persona.role}</p>
+                      </div>
+                      {currentPersona.name === persona.name && (
+                        <Check className="w-3.5 h-3.5 text-gold shrink-0" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
