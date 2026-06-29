@@ -336,35 +336,17 @@ export function AppShell({ children, title = 'Director Command View', subtitle, 
       
       {/* Mobile Brand header gradient for stunning effect in dark mode */}
 
-      {/* Persona Switcher */}
+      {/* User Profile */}
       <div className="px-3 py-2.5 border-b border-sidebar-border">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-gold/8 to-transparent hover:from-gold/12 hover:bg-sidebar-accent/70 transition-all duration-200">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gold/25 to-gold/10 border border-gold/35 shadow-[0_6px_18px_rgba(212,160,76,0.14)] flex items-center justify-center">
-                <span className="text-[9px] font-bold text-gold">{currentPersona.initials}</span>
-              </div>
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-[11.5px] font-semibold text-sidebar-foreground truncate tracking-[-0.01em]">{currentPersona.name}</p>
-                <p className="text-[9.5px] text-sidebar-foreground/55 truncate">{currentPersona.role}</p>
-              </div>
-              <ChevronDown className="w-3 h-3 text-sidebar-foreground/50 shrink-0" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[230px]">
-            {personas.map((persona) => (
-              <DropdownMenuItem key={persona.name} onClick={() => setCurrentPersona(persona)} className="flex items-center gap-3 cursor-pointer">
-                <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center">
-                  <span className="text-[10px] font-bold text-gold">{persona.initials}</span>
-                </div>
-                <div>
-                  <p className="text-[12.5px] font-medium">{persona.name}</p>
-                  <p className="text-[10.5px] text-muted-foreground">{persona.role}</p>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <div className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-gold/8 to-transparent">
+          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gold/25 to-gold/10 border border-gold/35 shadow-[0_6px_18px_rgba(212,160,76,0.14)] flex items-center justify-center">
+            <span className="text-[9px] font-bold text-gold">{currentPersona.initials}</span>
+          </div>
+          <div className="flex-1 text-left min-w-0">
+            <p className="text-[11.5px] font-semibold text-sidebar-foreground truncate tracking-[-0.01em]">{currentPersona.name}</p>
+            <p className="text-[9.5px] text-sidebar-foreground/55 truncate">{currentPersona.role}</p>
+          </div>
+        </div>
       </div>
 
       {/* Navigation */}
