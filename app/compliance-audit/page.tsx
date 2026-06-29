@@ -169,9 +169,9 @@ export default function ComplianceAuditPage() {
 
         <AuditShell
           type="compliance"
-          accentColor="text-teal"
-          accentBg="bg-teal"
-          accentBorder="border-teal"
+          accentColor="text-gold"
+          accentBg="bg-gold"
+          accentBorder="border-gold"
           schedulePageHref="/compliance-audit/schedule"
           schedules={allSchedules}
           occurrences={COMPLIANCE_AUDIT_OCCURRENCES}
