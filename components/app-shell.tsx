@@ -344,7 +344,6 @@ export function AppShell({ children, title = 'Director Command View', subtitle, 
           </div>
           <div className="flex-1 text-left min-w-0">
             <p className="text-[11.5px] font-semibold text-sidebar-foreground truncate tracking-[-0.01em]">{currentPersona.name}</p>
-            <p className="text-[9.5px] text-sidebar-foreground/55 truncate">{currentPersona.role}</p>
           </div>
         </div>
       </div>
