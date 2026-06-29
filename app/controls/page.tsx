@@ -29,6 +29,7 @@ import {
   getControlsAuditKpis,
 } from '@/lib/governance-data'
 import { ControlsActivityPanel } from '@/components/controls/controls-activity-panel'
+import { ExportPackModal } from '@/components/controls/export-pack-modal'
 
 const ease = [0.25, 0.46, 0.45, 0.94] as const
 
@@ -107,6 +108,7 @@ export default function ControlsPage() {
   const [alertsOn, setAlertsOn] = React.useState(false)
   const [alertChannel, setAlertChannel] = React.useState<string>('in-app')
   const [exportQueued, setExportQueued] = React.useState(false)
+  const [showExportModal, setShowExportModal] = React.useState(false)
 
   const downloadCompliancePack = (audience: string) => {
     const generatedAt = new Date()
@@ -251,39 +253,7 @@ export default function ControlsPage() {
                 <Bell className="w-3.5 h-3.5" /> {alertsOn ? 'Alerts On' : 'Alerts'}
               </Button>
               <Button
-                onClick={() =>
-                  action.open({
-                    tone: 'primary',
-                    icon: Download,
-                    title: 'Export Compliance Pack',
-                    description: 'Generate a portfolio controls pack with posture, heatmap, gaps, and audit evidence.',
-                    context: [
-                      { label: 'Sections', value: 'Posture · Auto-Audit · Compliance · Gaps · Owner Assignments' },
-                      { label: 'Format', value: 'PDF evidence pack' },
-                    ],
-                    fields: [
-                      {
-                        type: 'select',
-                        name: 'audience',
-                        label: 'Audience',
-                        defaultValue: 'leadership',
-                        required: true,
-                        options: [
-                          { value: 'leadership', label: 'Leadership summary' },
-                          { value: 'audit', label: 'Audit-ready evidence pack' },
-                          { value: 'controls', label: 'Controls team worklist' },
-                        ],
-                      },
-                    ],
-                    confirmLabel: 'Export Pack',
-                    successToast: 'Compliance pack downloaded',
-                    successDescription: 'The Markdown evidence pack has been saved through your browser downloads.',
-                    onConfirm: (values) => {
-                      downloadCompliancePack(values.audience || 'leadership')
-                      setExportQueued(true)
-                    },
-                  })
-                }
+                onClick={() => setShowExportModal(true)}
                 className="h-9 text-xs gap-1.5 bg-gold text-navy border border-gold font-semibold"
               >
                 <Download className="w-3.5 h-3.5" /> {exportQueued ? 'Downloaded' : 'Export Pack'}
@@ -381,6 +351,14 @@ export default function ControlsPage() {
           {tab === 'gaps' && <ControlGapExplorer />}
         </motion.div>
         {action.element}
+        <ExportPackModal
+          open={showExportModal}
+          onClose={() => setShowExportModal(false)}
+          onExport={(packType, format) => {
+            downloadCompliancePack(packType)
+            setExportQueued(true)
+          }}
+        />
       </div>
     </AppShell>
   )
