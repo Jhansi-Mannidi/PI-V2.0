@@ -80,7 +80,7 @@ export default function ControlsAuditSchedulePage() {
         <div className="flex h-[calc(100vh-57px)]">
 
           {/* ── LEFT PANEL ── */}
-          <div className="w-72 shrink-0 border-r border-line bg-card flex flex-col gap-5 px-5 py-6 overflow-y-auto">
+          <div className="w-80 shrink-0 border-r border-line bg-card flex flex-col gap-5 px-5 py-6 overflow-y-auto">
 
             {/* Identity card */}
             <motion.div
@@ -187,7 +187,7 @@ export default function ControlsAuditSchedulePage() {
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, delay: 0.06 }}
-              className="max-w-2xl space-y-5"
+              className="w-full space-y-5"
             >
 
               {/* Progress + section title */}
@@ -299,7 +299,7 @@ export default function ControlsAuditSchedulePage() {
                 <div className="p-5 space-y-4">
                   <div>
                     <label className={labelClass}>Select Controls to Audit</label>
-                    <div className="grid grid-cols-2 gap-1.5 max-h-52 overflow-y-auto rounded-lg border border-line bg-secondary/20 p-2">
+                    <div className="grid grid-cols-3 gap-1.5 max-h-52 overflow-y-auto rounded-lg border border-line bg-secondary/20 p-2">
                       {CONTROLS.map(control => {
                         const checked = formData.controlIds.includes(control.id)
                         return (
@@ -347,7 +347,7 @@ export default function ControlsAuditSchedulePage() {
                       <Users className="inline w-3 h-3 mr-1" />
                       Select Projects <span className="normal-case tracking-normal font-normal text-muted-foreground">(Optional)</span>
                     </label>
-                    <div className="grid grid-cols-2 gap-1.5 max-h-36 overflow-y-auto rounded-lg border border-line bg-secondary/20 p-2">
+                    <div className="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto rounded-lg border border-line bg-secondary/20 p-2">
                       {PROJECTS.map(project => {
                         const checked = formData.projectIds.includes(project.id)
                         return (
