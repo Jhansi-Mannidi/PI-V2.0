@@ -104,7 +104,7 @@ export function OccurrenceDetail({ occurrence, onClose, currentUserRole = 'Portf
         </div>
 
         {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 py-4 min-h-96">
+        <div className="flex-1 overflow-y-auto px-5 py-4 h-96">
           {activeTab === 'checklist' && (
             <div className="space-y-3">
               {occurrence.checklist.length === 0 ? (
