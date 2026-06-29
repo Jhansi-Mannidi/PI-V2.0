@@ -177,13 +177,13 @@ export function ControlsLibrary() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search controls, owners, projects…"
-                className="w-full pl-9 pr-3 py-1.5 text-[12px] rounded-lg border border-line bg-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold"
+                className="w-full pl-8 pr-3 py-1 text-[11px] rounded-lg border border-line bg-secondary text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-gold"
               />
             </div>
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as OwnerStatus | 'ALL')}
-              className="text-[12px] rounded-lg border border-line bg-secondary text-foreground px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-gold"
+              className="text-[13px] rounded-lg border border-line bg-secondary text-foreground px-3 py-2 font-medium focus:outline-none focus:ring-1 focus:ring-gold"
             >
               {STATUS_FILTER_OPTIONS.map((o) => (
                 <option key={o.value} value={o.value}>{o.label}</option>
@@ -192,7 +192,7 @@ export function ControlsLibrary() {
             <select
               value={programFilter}
               onChange={(e) => setProgramFilter(e.target.value)}
-              className="text-[12px] rounded-lg border border-line bg-secondary text-foreground px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-gold"
+              className="text-[13px] rounded-lg border border-line bg-secondary text-foreground px-3 py-2 font-medium focus:outline-none focus:ring-1 focus:ring-gold"
             >
               {PROGRAM_FILTER_OPTIONS.map((p) => (
                 <option key={p} value={p}>{p === 'All' ? 'All Programs' : p}</option>
