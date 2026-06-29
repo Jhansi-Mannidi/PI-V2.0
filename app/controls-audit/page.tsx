@@ -16,8 +16,23 @@ import {
   type AuditSchedule,
 } from '@/lib/governance-data'
 
+const LS_KEY = 'controls_audit_schedules_user'
+
 export default function ControlsAuditPage() {
   const kpis = getControlsAuditKpis()
+
+  const [userSchedules, setUserSchedules] = React.useState<AuditSchedule[]>([])
+
+  React.useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(LS_KEY) ?? '[]') as AuditSchedule[]
+      setUserSchedules(stored)
+    } catch {
+      setUserSchedules([])
+    }
+  }, [])
+
+  const allSchedules = [...CONTROLS_AUDIT_SCHEDULES, ...userSchedules]
 
   const kpiData = [
     { label: 'This Month', value: kpis.thisMonth, sub: 'scheduled', icon: CalendarDays, tone: 'gold' as const },
@@ -59,7 +74,7 @@ export default function ControlsAuditPage() {
                 Are our controls being tested at the right frequency, with evidence properly maintained?
               </h2>
               <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                {CONTROLS_AUDIT_SCHEDULES.length} control audit schedules · {CONTROLS_AUDIT_OCCURRENCES.length} total occurrences · {kpis.openFindings} open findings
+                {allSchedules.length} control audit schedules · {CONTROLS_AUDIT_OCCURRENCES.length} total occurrences · {kpis.openFindings} open findings
               </p>
             </div>
           </div>
@@ -71,7 +86,7 @@ export default function ControlsAuditPage() {
           accentBg="bg-gold"
           accentBorder="border-gold"
           schedulePageHref="/controls-audit/schedule"
-          schedules={CONTROLS_AUDIT_SCHEDULES}
+          schedules={allSchedules}
           occurrences={CONTROLS_AUDIT_OCCURRENCES}
           kpis={kpiData}
           renderScheduleExtra={renderScopeCell}

@@ -11,8 +11,24 @@ import { AppShell } from '@/components/app-shell'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
-  PROJECTS, USERS, CONTROLS, type Frequency,
+  PROJECTS, USERS, CONTROLS, type Frequency, type AuditSchedule,
 } from '@/lib/governance-data'
+
+const LS_KEY = 'controls_audit_schedules_user'
+
+function loadUserSchedules(): AuditSchedule[] {
+  if (typeof window === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) ?? '[]')
+  } catch {
+    return []
+  }
+}
+
+function saveUserSchedule(s: AuditSchedule) {
+  const existing = loadUserSchedules()
+  localStorage.setItem(LS_KEY, JSON.stringify([...existing, s]))
+}
 
 const FREQUENCIES: Frequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Quarterly', 'Semi-Annual', 'Annual', 'Custom']
 
@@ -46,7 +62,41 @@ export default function ControlsAuditSchedulePage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    const existing = loadUserSchedules()
+    const nextIndex = 7 + existing.length // static data has AS-001..AS-006
+    const id = `AS-${String(nextIndex).padStart(3, '0')}`
+
+    const auditor = USERS.find(u => u.id === formData.auditorId)
+    const owner = USERS.find(u => u.id !== formData.auditorId) ?? USERS[0]
+
+    // compute next run date based on frequency
+    const start = new Date(formData.startDate)
+    const nextRun = formData.startDate // use start date as next run
+
+    const newSchedule: AuditSchedule = {
+      id,
+      name: formData.name,
+      type: 'controls',
+      scopeProjects: formData.projectIds,
+      scopeItemIds: formData.controlIds,
+      frequency: formData.frequency,
+      startDate: formData.startDate,
+      time: formData.time,
+      timezone: 'UTC',
+      assignedAuditorId: formData.auditorId,
+      assignedAuditorName: auditor?.name ?? 'Unknown',
+      accountableOwnerId: owner.id,
+      accountableOwnerName: owner.name,
+      reminderLeadDays: 3,
+      graceDays: 2,
+      status: 'Active',
+      nextRun,
+      lastRun: null,
+    }
+
+    saveUserSchedule(newSchedule)
     router.push('/controls-audit')
   }
 
