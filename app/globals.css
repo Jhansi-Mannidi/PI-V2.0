@@ -4,8 +4,8 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Golden Yellow Simple Theme */
-  --background: #FFFBF0;
+  /* Golden Yellow Simple Theme with Neutral Background */
+  --background: #FFFFFF;
   --foreground: #2C2C2C;
   --card: #FFFFFF;
   --card-foreground: #2C2C2C;
@@ -13,7 +13,7 @@
   --popover-foreground: #2C2C2C;
   --primary: #FDB913;
   --primary-foreground: #2C2C2C;
-  --secondary: #FFFBF0;
+  --secondary: #F5F5F5;
   --secondary-foreground: #2C2C2C;
   --muted: #F5F5F5;
   --muted-foreground: #757575;
@@ -31,9 +31,9 @@
   --navy-mid: #616161;
   --ink: #2C2C2C;
   --slate: #757575;
-  --paper: #FFFBF0;
-  --cream: #FEF7E7;
-  --cream-dark: #FCF0D4;
+  --paper: #FFFFFF;
+  --cream: #F5F5F5;
+  --cream-dark: #EBEBEB;
   --gold: #FDB913;
   --gold-soft: #FDD76A;
   --gold-light: #FEE5A5;
