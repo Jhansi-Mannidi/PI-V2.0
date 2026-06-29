@@ -8,39 +8,36 @@ import { motion } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
 import { cn } from '@/lib/utils'
 import {
-  PROJECTS, USERS, COMPLIANCE_ITEMS, type Frequency, type AuditSchedule,
+  PROJECTS, USERS, COMPLIANCE_ITEMS, type Frequency,
 } from '@/lib/governance-data'
+import {
+  saveNewSchedule, generateScheduleId,
+  type RichAuditSchedule, type TrailEntry,
+} from '@/lib/audit-store'
 
 const FREQUENCIES: Frequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Quarterly', 'Semi-Annual', 'Annual', 'Custom']
-const LS_KEY = 'compliance_audit_schedules_user'
-const ease = [0.25, 0.1, 0.25, 1]
-
-function loadUserSchedules(): AuditSchedule[] {
-  if (typeof window === 'undefined') return []
-  try { return JSON.parse(localStorage.getItem(LS_KEY) ?? '[]') } catch { return [] }
-}
-
-function saveUserSchedule(s: AuditSchedule) {
-  const existing = loadUserSchedules()
-  localStorage.setItem(LS_KEY, JSON.stringify([...existing, s]))
-}
+const ease = [0.25, 0.1, 0.25, 1] as const
 
 export default function ComplianceAuditSchedulePage() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState(false)
   const [formData, setFormData] = React.useState({
     name: '',
+    purpose: '',
+    requestedById: '',
+    approvedById: '',
     frequency: 'Quarterly' as Frequency,
     auditorId: '',
     startDate: new Date().toISOString().slice(0, 10),
     time: '09:00',
     projectIds: [] as string[],
     complianceIds: [] as string[],
+    notes: '',
   })
 
   // live progress for the left panel step tracker
   const filled = [
-    !!formData.name,
+    !!(formData.name && formData.purpose),
     !!formData.auditorId,
     formData.complianceIds.length > 0,
   ]
@@ -51,14 +48,40 @@ export default function ComplianceAuditSchedulePage() {
     setIsLoading(true)
     await new Promise(resolve => setTimeout(resolve, 800))
 
-    const existing = loadUserSchedules()
-    const nextIndex = 206 + existing.length
-    const id = `AS-${nextIndex}`
+    const id = generateScheduleId('compliance')
+    const now = new Date().toISOString()
 
     const auditor = USERS.find(u => u.id === formData.auditorId)
     const owner = USERS.find(u => u.id !== formData.auditorId) ?? USERS[0]
+    const requester = USERS.find(u => u.id === formData.requestedById) ?? USERS[0]
+    const approver = USERS.find(u => u.id === formData.approvedById) ?? USERS[0]
+    const creator = USERS[0]
 
-    const newSchedule: AuditSchedule = {
+    const scopeNames = formData.complianceIds
+      .slice(0, 3)
+      .map(id => COMPLIANCE_ITEMS.find(c => c.id === id)?.requirement ?? id)
+      .join(', ')
+    const scopeDescription = `${formData.complianceIds.length} obligations${formData.projectIds.length > 0 ? ` across ${formData.projectIds.length} project(s)` : ''}. ${scopeNames}${formData.complianceIds.length > 3 ? '…' : ''}`
+
+    const trail: TrailEntry[] = [
+      {
+        id: `${id}-T1`, action: 'Created',
+        actor: creator.name, actorInitials: creator.initials, actorRole: creator.role, ts: now,
+        detail: 'Schedule created via Compliance Audit Schedule form.',
+      },
+      ...(formData.requestedById ? [{
+        id: `${id}-T2`, action: 'Requested by' as const,
+        actor: requester.name, actorInitials: requester.initials, actorRole: requester.role, ts: now,
+        detail: 'Compliance audit requirement raised.',
+      }] : []),
+      ...(formData.approvedById ? [{
+        id: `${id}-T3`, action: 'Approved by' as const,
+        actor: approver.name, actorInitials: approver.initials, actorRole: approver.role, ts: now,
+        detail: 'Schedule approved.',
+      }] : []),
+    ]
+
+    const newSchedule: RichAuditSchedule = {
       id,
       name: formData.name,
       type: 'compliance',
@@ -77,13 +100,38 @@ export default function ComplianceAuditSchedulePage() {
       status: 'Active',
       nextRun: formData.startDate,
       lastRun: null,
+      createdById: creator.id,
+      createdByName: creator.name,
+      createdByRole: creator.role,
+      requestedById: requester.id,
+      requestedByName: requester.name,
+      requestedByRole: requester.role,
+      approvedById: approver.id,
+      approvedByName: approver.name,
+      approvedByRole: approver.role,
+      purpose: formData.purpose || formData.notes || '',
+      sourceModule: 'Compliance Register — Compliance Audit',
+      regulatoryRef: '',
+      createdAt: now,
+      updatedAt: now,
+      scopeDescription,
+      lifecycle: 'Scheduled',
+      trail,
+      comments: formData.notes ? [{
+        id: `${id}-C1`,
+        author: creator.name,
+        authorInitials: creator.initials,
+        authorRole: creator.role,
+        ts: now,
+        text: formData.notes,
+      }] : [],
     }
 
-    saveUserSchedule(newSchedule)
+    saveNewSchedule(newSchedule)
     toast.success('Compliance audit schedule created', {
-      description: `${newSchedule.name} (${newSchedule.id}) is now active and will run ${newSchedule.frequency.toLowerCase()}.`,
+      description: `${newSchedule.name} (${newSchedule.id}) is now active — visible in the Audit Intelligence Hub.`,
     })
-    router.push('/compliance-audit')
+    router.push('/audit-hub')
   }
 
   const inputCls = 'w-full px-3 py-2 rounded-lg border border-line bg-background text-foreground text-[12.5px] placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold/50 transition-all'
@@ -103,8 +151,10 @@ export default function ComplianceAuditSchedulePage() {
         <div className="flex items-center gap-2 px-6 py-3.5 border-b border-line bg-card text-[12px] text-muted-foreground shrink-0">
           <button onClick={() => router.back()} className="flex items-center gap-1.5 hover:text-foreground transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" />
-            Controls Audit
           </button>
+          <button onClick={() => router.push('/audit-hub')} className="hover:text-foreground transition-colors">Audit Hub</button>
+          <ChevronRight className="w-3 h-3 opacity-40" />
+          <button onClick={() => router.push('/compliance-audit')} className="hover:text-foreground transition-colors">Compliance Audit</button>
           <ChevronRight className="w-3 h-3 opacity-40" />
           <span className="text-foreground font-medium">New Audit Schedule</span>
         </div>
@@ -243,6 +293,46 @@ export default function ComplianceAuditSchedulePage() {
                       className={inputCls}
                       required
                     />
+                  </div>
+
+                  {/* Purpose */}
+                  <div className="space-y-1.5">
+                    <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground flex items-center gap-1">
+                      Purpose / Why this audit exists <span className="text-gold">*</span>
+                    </label>
+                    <textarea
+                      placeholder="Describe why this audit is required — regulatory driver, obligation mitigated, or business objective..."
+                      value={formData.purpose}
+                      onChange={e => setFormData(p => ({ ...p, purpose: e.target.value }))}
+                      rows={3}
+                      className={cn(inputCls, 'resize-none')}
+                    />
+                  </div>
+
+                  {/* Requested by + Approved by */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Requested by</label>
+                      <select
+                        value={formData.requestedById}
+                        onChange={e => setFormData(p => ({ ...p, requestedById: e.target.value }))}
+                        className={selectCls}
+                      >
+                        <option value="">Select person...</option>
+                        {USERS.map(u => <option key={u.id} value={u.id}>{u.name} — {u.role}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Approved by</label>
+                      <select
+                        value={formData.approvedById}
+                        onChange={e => setFormData(p => ({ ...p, approvedById: e.target.value }))}
+                        className={selectCls}
+                      >
+                        <option value="">Select approver...</option>
+                        {USERS.map(u => <option key={u.id} value={u.id}>{u.name} — {u.role}</option>)}
+                      </select>
+                    </div>
                   </div>
 
                   {/* Frequency + Auditor */}

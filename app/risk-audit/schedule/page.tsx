@@ -12,24 +12,12 @@ import { AppShell } from '@/components/app-shell'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
 import {
-  PROJECTS, USERS, RISK_ITEMS, type Frequency, type AuditSchedule,
+  PROJECTS, USERS, RISK_ITEMS, type Frequency,
 } from '@/lib/governance-data'
-
-const LS_KEY = 'risk_audit_schedules_user'
-
-function loadUserSchedules(): AuditSchedule[] {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem(LS_KEY) ?? '[]')
-  } catch {
-    return []
-  }
-}
-
-function saveUserSchedule(s: AuditSchedule) {
-  const existing = loadUserSchedules()
-  localStorage.setItem(LS_KEY, JSON.stringify([...existing, s]))
-}
+import {
+  saveNewSchedule, generateScheduleId,
+  type RichAuditSchedule, type TrailEntry,
+} from '@/lib/audit-store'
 
 const FREQUENCIES: Frequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Quarterly', 'Semi-Annual', 'Annual', 'Custom']
 
@@ -46,6 +34,9 @@ export default function RiskAuditSchedulePage() {
   const [isLoading, setIsLoading] = React.useState(false)
   const [formData, setFormData] = React.useState({
     name: '',
+    purpose: '',
+    requestedById: '',
+    approvedById: '',
     frequency: 'Monthly' as Frequency,
     auditorId: '',
     startDate: new Date().toISOString().slice(0, 10),
@@ -57,7 +48,7 @@ export default function RiskAuditSchedulePage() {
 
   const isValid = formData.name.trim() && formData.auditorId && formData.riskIds.length > 0
   const progress = [
-    formData.name.trim(),
+    formData.name.trim() && formData.purpose.trim(),
     formData.auditorId,
     formData.riskIds.length > 0,
   ].filter(Boolean).length
@@ -67,14 +58,40 @@ export default function RiskAuditSchedulePage() {
     setIsLoading(true)
     await new Promise(resolve => setTimeout(resolve, 800))
 
-    const existing = loadUserSchedules()
-    const nextIndex = 106 + existing.length // static data has AS-101..AS-105
-    const id = `AS-${String(nextIndex).padStart(3, '0')}`
+    const id = generateScheduleId('risk')
+    const now = new Date().toISOString()
 
     const auditor = USERS.find(u => u.id === formData.auditorId)
     const owner = USERS.find(u => u.id !== formData.auditorId) ?? USERS[0]
+    const requester = USERS.find(u => u.id === formData.requestedById) ?? USERS[0]
+    const approver = USERS.find(u => u.id === formData.approvedById) ?? USERS[0]
+    const creator = USERS[0]
 
-    const newSchedule: AuditSchedule = {
+    const scopeNames = formData.riskIds
+      .slice(0, 3)
+      .map(id => RISK_ITEMS.find(r => r.id === id)?.title ?? id)
+      .join(', ')
+    const scopeDescription = `${formData.riskIds.length} risks${formData.projectIds.length > 0 ? ` across ${formData.projectIds.length} project(s)` : ''}. ${scopeNames}${formData.riskIds.length > 3 ? '…' : ''}`
+
+    const trail: TrailEntry[] = [
+      {
+        id: `${id}-T1`, action: 'Created',
+        actor: creator.name, actorInitials: creator.initials, actorRole: creator.role, ts: now,
+        detail: 'Schedule created via Risk Audit Schedule form.',
+      },
+      ...(formData.requestedById ? [{
+        id: `${id}-T2`, action: 'Requested by' as const,
+        actor: requester.name, actorInitials: requester.initials, actorRole: requester.role, ts: now,
+        detail: 'Risk audit requirement raised and schedule requested.',
+      }] : []),
+      ...(formData.approvedById ? [{
+        id: `${id}-T3`, action: 'Approved by' as const,
+        actor: approver.name, actorInitials: approver.initials, actorRole: approver.role, ts: now,
+        detail: 'Schedule reviewed and approved.',
+      }] : []),
+    ]
+
+    const newSchedule: RichAuditSchedule = {
       id,
       name: formData.name,
       type: 'risk',
@@ -93,13 +110,38 @@ export default function RiskAuditSchedulePage() {
       status: 'Active',
       nextRun: formData.startDate,
       lastRun: null,
+      createdById: creator.id,
+      createdByName: creator.name,
+      createdByRole: creator.role,
+      requestedById: requester.id,
+      requestedByName: requester.name,
+      requestedByRole: requester.role,
+      approvedById: approver.id,
+      approvedByName: approver.name,
+      approvedByRole: approver.role,
+      purpose: formData.purpose || formData.notes || '',
+      sourceModule: 'Risk Register — Risk Audit',
+      regulatoryRef: '',
+      createdAt: now,
+      updatedAt: now,
+      scopeDescription,
+      lifecycle: 'Scheduled',
+      trail,
+      comments: formData.notes ? [{
+        id: `${id}-C1`,
+        author: creator.name,
+        authorInitials: creator.initials,
+        authorRole: creator.role,
+        ts: now,
+        text: formData.notes,
+      }] : [],
     }
 
-    saveUserSchedule(newSchedule)
+    saveNewSchedule(newSchedule)
     toast.success('Risk audit schedule created', {
-      description: `${newSchedule.name} (${newSchedule.id}) is now active and will run ${newSchedule.frequency.toLowerCase()}.`,
+      description: `${newSchedule.name} (${newSchedule.id}) is now active — visible in the Audit Intelligence Hub.`,
     })
-    router.push('/risk-audit')
+    router.push('/audit-hub')
   }
 
   const labelClass = 'block text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground mb-1.5'
@@ -119,6 +161,10 @@ export default function RiskAuditSchedulePage() {
               <ArrowLeft className="w-4 h-4" />
             </button>
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="hover:text-foreground cursor-pointer" onClick={() => router.push('/audit-hub')}>
+                Audit Hub
+              </span>
+              <ChevronRight className="w-3.5 h-3.5" />
               <span className="hover:text-foreground cursor-pointer" onClick={() => router.push('/risk-audit')}>
                 Risk Audit
               </span>
@@ -279,6 +325,44 @@ export default function RiskAuditSchedulePage() {
                       className={inputClass}
                       required
                     />
+                  </div>
+
+                  {/* Purpose */}
+                  <div>
+                    <label className={labelClass}>Purpose / Why this audit exists <span className="text-gold">*</span></label>
+                    <textarea
+                      placeholder="Describe why this audit is required — regulatory driver, risk mitigated, or business objective..."
+                      value={formData.purpose}
+                      onChange={e => setFormData(p => ({ ...p, purpose: e.target.value }))}
+                      rows={3}
+                      className={cn(inputClass, 'resize-none')}
+                    />
+                  </div>
+
+                  {/* Requested by + Approved by */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className={labelClass}>Requested by</label>
+                      <select
+                        value={formData.requestedById}
+                        onChange={e => setFormData(p => ({ ...p, requestedById: e.target.value }))}
+                        className={inputClass}
+                      >
+                        <option value="">Select person...</option>
+                        {USERS.map(u => <option key={u.id} value={u.id}>{u.name} — {u.role}</option>)}
+                      </select>
+                    </div>
+                    <div>
+                      <label className={labelClass}>Approved by</label>
+                      <select
+                        value={formData.approvedById}
+                        onChange={e => setFormData(p => ({ ...p, approvedById: e.target.value }))}
+                        className={inputClass}
+                      >
+                        <option value="">Select approver...</option>
+                        {USERS.map(u => <option key={u.id} value={u.id}>{u.name} — {u.role}</option>)}
+                      </select>
+                    </div>
                   </div>
 
                   {/* Frequency + Auditor */}

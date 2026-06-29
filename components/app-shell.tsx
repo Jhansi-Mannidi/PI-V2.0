@@ -93,6 +93,7 @@ const navSections: NavSection[] = [
   {
     title: 'GOVERNANCE & AUDIT',
     items: [
+      { label: 'Audit Intelligence Hub', icon: Layers, href: '/audit-hub' },
       { label: 'Controls & Auto-Audit', icon: ShieldCheck, href: '/controls', badge: 17 },
       { label: 'Owner Assignment', icon: BookOpen, href: '/controls-library' },
       { label: 'SLA Tracker', icon: Clock, href: '/sla', badge: 7 },
