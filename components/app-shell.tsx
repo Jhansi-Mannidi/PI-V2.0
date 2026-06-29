@@ -336,18 +336,6 @@ export function AppShell({ children, title = 'Director Command View', subtitle, 
       
       {/* Mobile Brand header gradient for stunning effect in dark mode */}
 
-      {/* User Profile */}
-      <div className="px-3 py-2.5 border-b border-sidebar-border">
-        <div className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-gold/8 to-transparent">
-          <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gold/25 to-gold/10 border border-gold/35 shadow-[0_6px_18px_rgba(212,160,76,0.14)] flex items-center justify-center">
-            <span className="text-[9px] font-bold text-gold">{currentPersona.initials}</span>
-          </div>
-          <div className="flex-1 text-left min-w-0">
-            <p className="text-[11.5px] font-semibold text-sidebar-foreground truncate tracking-[-0.01em]">{currentPersona.name}</p>
-          </div>
-        </div>
-      </div>
-
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-3">
         {navSections.map((section) => {
