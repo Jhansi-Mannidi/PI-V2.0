@@ -80,7 +80,7 @@ export default function RiskAuditPage() {
         <div className="text-[11px] font-medium text-foreground">{s.scopeItemIds.length} risk item{s.scopeItemIds.length !== 1 ? 's' : ''}</div>
         <div className="flex flex-wrap gap-1 mt-1">
           {riskItems.slice(0, 2).map((r) => (
-            <span key={r.id} className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-red-bg text-red border border-red/25 font-mono">{r.id}</span>
+            <span key={r.id} className="text-[9px] font-semibold px-1.5 py-0.5 rounded bg-gold/10 text-gold border border-gold/25 font-mono">{r.id}</span>
           ))}
           {riskItems.length > 2 && <span className="text-[10px] text-muted-foreground">+{riskItems.length - 2}</span>}
         </div>
@@ -98,8 +98,8 @@ export default function RiskAuditPage() {
         {/* Page intro */}
         <div className="bg-card rounded-xl border border-line p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-red-bg flex items-center justify-center shrink-0">
-              <AlertTriangle className="w-5 h-5 text-red" />
+            <div className="w-10 h-10 rounded-xl bg-gold/15 flex items-center justify-center shrink-0">
+              <AlertTriangle className="w-5 h-5 text-gold" />
             </div>
             <div>
               <h2 className="text-[15px] font-bold text-foreground leading-snug">
@@ -114,9 +114,9 @@ export default function RiskAuditPage() {
 
         <AuditShell
           type="risk"
-          accentColor="text-red"
-          accentBg="bg-red"
-          accentBorder="border-red"
+          accentColor="text-gold"
+          accentBg="bg-gold"
+          accentBorder="border-gold"
           schedulePageHref="/risk-audit/schedule"
           schedules={allSchedules}
           occurrences={RISK_AUDIT_OCCURRENCES}

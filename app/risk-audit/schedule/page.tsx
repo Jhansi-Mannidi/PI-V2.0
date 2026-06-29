@@ -99,7 +99,7 @@ export default function RiskAuditSchedulePage() {
   }
 
   const labelClass = 'block text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground mb-1.5'
-  const inputClass = 'w-full px-3 py-2 text-sm rounded-lg border border-line bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red/30 focus:border-red/50 transition-all'
+  const inputClass = 'w-full px-3 py-2 text-sm rounded-lg border border-line bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-gold/30 focus:border-gold/50 transition-all'
 
   return (
     <AppShell>
@@ -138,11 +138,11 @@ export default function RiskAuditSchedulePage() {
               className="rounded-xl border border-line bg-background p-4"
             >
               <div className="flex items-start gap-3">
-                <div className="w-9 h-9 rounded-lg bg-red-bg flex items-center justify-center shrink-0">
-                  <CalendarClock className="w-4.5 h-4.5 text-red" />
+                <div className="w-9 h-9 rounded-lg bg-gold/15 flex items-center justify-center shrink-0">
+                  <CalendarClock className="w-4.5 h-4.5 text-gold" />
                 </div>
                 <div>
-                  <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest text-red border border-red/30 bg-red-bg rounded px-1.5 py-0.5 mb-1.5">
+                  <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest text-gold border border-gold/30 bg-gold/15 rounded px-1.5 py-0.5 mb-1.5">
                     New Schedule
                   </span>
                   <p className="text-[13px] font-bold text-foreground leading-snug">Schedule Risk Audit</p>
@@ -173,7 +173,7 @@ export default function RiskAuditSchedulePage() {
                   <span className="text-[11.5px] text-muted-foreground">{row.label}</span>
                   <span className={cn(
                     'text-[12px] font-bold font-mono',
-                    row.label === 'Selected Risks' && formData.riskIds.length > 0 ? 'text-red' : 'text-foreground'
+                    row.label === 'Selected Risks' && formData.riskIds.length > 0 ? 'text-gold' : 'text-foreground'
                   )}>{row.value}</span>
                 </div>
               ))}
@@ -200,7 +200,7 @@ export default function RiskAuditSchedulePage() {
                     <li key={step.label} className="flex items-center gap-2.5">
                       <div className={cn(
                         'w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0',
-                        done ? 'bg-red text-white' : 'bg-secondary text-muted-foreground border border-line'
+                        done ? 'bg-gold text-white' : 'bg-secondary text-muted-foreground border border-line'
                       )}>
                         {done ? '✓' : i + 1}
                       </div>
@@ -245,7 +245,7 @@ export default function RiskAuditSchedulePage() {
                 <div className="flex items-center gap-2.5">
                   <div className="w-32 h-1.5 rounded-full bg-secondary overflow-hidden">
                     <motion.div
-                      className="h-full bg-red rounded-full"
+                      className="h-full bg-gold rounded-full"
                       animate={{ width: `${(progress / 3) * 100}%` }}
                       transition={{ duration: 0.3 }}
                     />
@@ -257,7 +257,7 @@ export default function RiskAuditSchedulePage() {
               {/* ── AUDIT DETAILS section ── */}
               <div className="bg-card rounded-xl border border-line overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/30">
-                  <CalendarClock className="w-3.5 h-3.5 text-red" />
+                  <CalendarClock className="w-3.5 h-3.5 text-gold" />
                   <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-foreground">Audit Details</span>
                 </div>
                 <div className="p-4 space-y-4">
@@ -265,7 +265,7 @@ export default function RiskAuditSchedulePage() {
                   {/* Audit Name */}
                   <div>
                     <label className={labelClass}>
-                      Audit Name <span className="text-red">*</span>
+                      Audit Name <span className="text-gold">*</span>
                     </label>
                     <input
                       type="text"
@@ -291,7 +291,7 @@ export default function RiskAuditSchedulePage() {
                     </div>
                     <div>
                       <label className={labelClass}>
-                        Assigned Auditor <span className="text-red">*</span>
+                        Assigned Auditor <span className="text-gold">*</span>
                       </label>
                       <select
                         value={formData.auditorId}
@@ -338,9 +338,9 @@ export default function RiskAuditSchedulePage() {
               {/* ── AUDIT SCOPE section ── */}
               <div className="bg-card rounded-xl border border-line overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/30">
-                  <AlertTriangle className="w-3.5 h-3.5 text-red" />
+                  <AlertTriangle className="w-3.5 h-3.5 text-gold" />
                   <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-foreground">
-                    Audit Scope <span className="text-red normal-case font-medium">*</span>
+                    Audit Scope <span className="text-gold normal-case font-medium">*</span>
                   </span>
                 </div>
                 <div className="p-4 space-y-4">
@@ -356,12 +356,12 @@ export default function RiskAuditSchedulePage() {
                             key={risk.id}
                             className={cn(
                               'flex items-start gap-2 p-2 rounded-lg cursor-pointer transition-colors text-left',
-                              checked ? 'bg-red-bg border border-red/30' : 'hover:bg-secondary/60'
+                              checked ? 'bg-gold/15 border border-gold/30' : 'hover:bg-secondary/60'
                             )}
                           >
                             <div className={cn(
                               'w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors',
-                              checked ? 'bg-red border-red' : 'border-line bg-background'
+                              checked ? 'bg-gold border-gold' : 'border-line bg-background'
                             )}>
                               {checked && <span className="text-white text-[8px] font-bold leading-none">✓</span>}
                             </div>
@@ -378,14 +378,14 @@ export default function RiskAuditSchedulePage() {
                             />
                             <div className="min-w-0">
                               <p className="text-[11.5px] font-medium text-foreground leading-snug line-clamp-2">{risk.title}</p>
-                              <p className="text-[10px] text-red font-mono mt-0.5">{risk.id}</p>
+                              <p className="text-[10px] text-gold font-mono mt-0.5">{risk.id}</p>
                             </div>
                           </label>
                         )
                       })}
                     </div>
                     {formData.riskIds.length > 0 && (
-                      <p className="text-[11px] text-red font-medium mt-1.5">
+                      <p className="text-[11px] text-gold font-medium mt-1.5">
                         {formData.riskIds.length} risk{formData.riskIds.length !== 1 ? 's' : ''} selected
                       </p>
                     )}
@@ -405,12 +405,12 @@ export default function RiskAuditSchedulePage() {
                             key={proj.id}
                             className={cn(
                               'flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors',
-                              checked ? 'bg-red-bg border border-red/30' : 'hover:bg-secondary/60'
+                              checked ? 'bg-gold/15 border border-gold/30' : 'hover:bg-secondary/60'
                             )}
                           >
                             <div className={cn(
                               'w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
-                              checked ? 'bg-red border-red' : 'border-line bg-background'
+                              checked ? 'bg-gold border-gold' : 'border-line bg-background'
                             )}>
                               {checked && <span className="text-white text-[8px] font-bold leading-none">✓</span>}
                             </div>
@@ -437,7 +437,7 @@ export default function RiskAuditSchedulePage() {
               {/* ── NOTES section ── */}
               <div className="bg-card rounded-xl border border-line overflow-hidden">
                 <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/30">
-                  <ClipboardList className="w-3.5 h-3.5 text-red" />
+                  <ClipboardList className="w-3.5 h-3.5 text-gold" />
                   <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-foreground">Notes</span>
                   <span className="text-[10px] text-muted-foreground font-normal ml-1">(Optional)</span>
                 </div>
@@ -468,7 +468,7 @@ export default function RiskAuditSchedulePage() {
                   className={cn(
                     'px-6 h-9 text-sm font-semibold transition-all',
                     isValid
-                      ? 'bg-red hover:bg-red/90 text-white'
+                      ? 'bg-gold hover:bg-gold/90 text-white'
                       : 'bg-secondary text-muted-foreground cursor-not-allowed'
                   )}
                 >
