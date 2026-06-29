@@ -268,9 +268,9 @@ export function ActionModal({
         {requiredFields.length > 0 && (
           <>
             <div className="hidden sm:flex items-center gap-2">
-              <div className="w-32 h-2 rounded-full bg-line overflow-hidden shadow-sm">
+              <div className="w-32 h-1.5 rounded-full bg-line overflow-hidden">
                 <motion.div
-                  className="h-full rounded-full bg-gradient-to-r from-gold to-gold/80 shadow-sm"
+                  className="h-full bg-primary"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -342,40 +342,25 @@ export function ActionModal({
         {/* ════════════════════════════════════════
             LEFT COLUMN — Identity + Context
         ════════════════════════════════════════ */}
-        <div className="flex flex-col gap-5 px-6 py-7 overflow-y-auto" style={{ backgroundColor: tone === 'primary' ? 'var(--navy-soft)' : tone === 'success' ? 'var(--green-bg)' : tone === 'warning' ? 'var(--amber-bg)' : tone === 'destructive' ? 'var(--red-bg)' : 'var(--teal-soft)' }}>
+        <div className="flex flex-col gap-4 px-6 py-7 overflow-y-auto bg-secondary">
 
           {/* Hero identity card */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28 }}
-            className="relative overflow-hidden rounded-2xl border p-5 bg-white shadow-md border-line"
+            className="rounded-lg border p-4 bg-white border-line"
           >
-            {/* Vibrant tone-accented gradient wash */}
-            <div className={cn('absolute inset-0 bg-gradient-to-br opacity-100 pointer-events-none', tc.heroGradient)} />
-
-            <div className="relative flex items-start gap-4">
-              <div className={cn(
-                'shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center border shadow-md',
-                tc.button,
-              )}>
-                <Icon className={cn('w-6 h-6 text-white')} />
+            <div className="flex items-start gap-3">
+              <div className="shrink-0 w-10 h-10 rounded-lg flex items-center justify-center bg-primary text-primary-foreground">
+                <Icon className="w-5 h-5" />
               </div>
               <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className={cn(
-                    'inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded-full border text-white',
-                    tc.button,
-                  )}>
-                    <Zap className="w-2.5 h-2.5" />
-                    {TONE_LABELS[tone]}
-                  </span>
-                </div>
-                <h3 className={cn('text-[16px] font-bold leading-tight mt-3', tc.icon)}>
+                <h3 className="text-sm font-bold text-foreground">
                   {title}
                 </h3>
                 {description && (
-                  <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
+                  <p className="text-xs text-muted-foreground mt-1">
                     {description}
                   </p>
                 )}
@@ -389,33 +374,27 @@ export function ActionModal({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, delay: 0.06 }}
-              className="rounded-2xl border border-line bg-white overflow-hidden shadow-md"
+              className="rounded-lg border border-line bg-white overflow-hidden"
             >
               {/* Header */}
-              <div className={cn('flex items-center gap-2 px-4 py-3 border-b border-line text-white', tc.button)}>
-                <Activity className="w-3.5 h-3.5" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em]">
-                  Acting on
+              <div className="flex items-center gap-2 px-4 py-2 border-b border-line bg-primary/5">
+                <Activity className="w-3.5 h-3.5 text-primary" />
+                <p className="text-xs font-semibold text-foreground">
+                  Details
                 </p>
               </div>
 
               {/* Context rows */}
               <dl className="divide-y divide-line">
                 {context.map((row, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, x: -4 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.2, delay: 0.08 + i * 0.05 }}
-                    className="grid grid-cols-2 gap-x-4 px-4 py-3"
-                  >
-                    <dt className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold self-start pt-0.5">
+                  <div key={i} className="grid grid-cols-2 gap-x-4 px-4 py-2.5">
+                    <dt className="text-xs text-muted-foreground font-medium">
                       {row.label}
                     </dt>
-                    <dd className="text-[13px] text-foreground font-semibold text-right">
+                    <dd className="text-xs text-foreground font-semibold text-right">
                       {row.value}
                     </dd>
-                  </motion.div>
+                  </div>
                 ))}
               </dl>
             </motion.div>
@@ -426,39 +405,30 @@ export function ActionModal({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, delay: 0.12 }}
-            className="rounded-2xl border border-line bg-white overflow-hidden shadow-md"
+            className="rounded-lg border border-line bg-white overflow-hidden"
           >
-            <div className={cn('flex items-center gap-2 px-4 py-3 border-b border-line text-white', tc.button)}>
-              <Shield className="w-3.5 h-3.5" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em]">
-                Workflow
+            <div className="flex items-center gap-2 px-4 py-2 border-b border-line bg-primary/5">
+              <Shield className="w-3.5 h-3.5 text-primary" />
+              <p className="text-xs font-semibold text-foreground">
+                Steps
               </p>
             </div>
-            <div className="p-4 space-y-3">
+            <div className="p-4 space-y-2.5">
               {[
-                { label: 'Fill in action details', done: filledRequired === requiredFields.length && requiredFields.length > 0 },
-                { label: 'Review context above', done: true },
-                { label: 'Submit for audit trail', done: false },
+                { label: 'Fill details', done: filledRequired === requiredFields.length && requiredFields.length > 0 },
+                { label: 'Review', done: true },
+                { label: 'Submit', done: false },
               ].map((step, i) => (
-                <div key={i} className="flex items-center gap-3">
+                <div key={i} className="flex items-center gap-2.5">
                   <div className={cn(
-                    'w-5 h-5 rounded-full flex items-center justify-center border shrink-0 transition-all duration-300',
-                    step.done
-                      ? cn(tc.badge, tc.border)
-                      : 'bg-secondary border-line',
+                    'w-4 h-4 rounded-full flex items-center justify-center border shrink-0',
+                    step.done ? 'bg-primary border-primary' : 'bg-muted border-line',
                   )}>
-                    {step.done
-                      ? <CheckCircle2 className={cn('w-3 h-3', tc.icon)} />
-                      : <span className="w-1.5 h-1.5 rounded-full bg-muted-foreground/40" />
-                    }
+                    {step.done && <CheckCircle2 className="w-2.5 h-2.5 text-primary-foreground" />}
                   </div>
-                  <span className={cn(
-                    'text-[12px] font-medium transition-colors',
-                    step.done ? 'text-foreground' : 'text-muted-foreground',
-                  )}>
+                  <span className={cn('text-xs font-medium', step.done ? 'text-foreground' : 'text-muted-foreground')}>
                     {step.label}
                   </span>
-                  {i < 2 && <ArrowRight className="w-3 h-3 text-muted-foreground/30 ml-auto" />}
                 </div>
               ))}
             </div>
@@ -497,26 +467,8 @@ export function ActionModal({
               </p>
             </div>
             {/* Completion ring */}
-            <div className="shrink-0">
-              <svg width="40" height="40" viewBox="0 0 40 40">
-                <circle cx="20" cy="20" r="15" fill="none" stroke="var(--line)" strokeWidth="3" />
-                <motion.circle
-                  cx="20" cy="20" r="15"
-                  fill="none"
-                  strokeWidth="3"
-                  strokeLinecap="round"
-                  stroke={tone === 'destructive' ? 'var(--red)' : tone === 'success' ? 'var(--green)' : tone === 'warning' ? 'var(--amber)' : tone === 'info' ? 'var(--teal)' : 'var(--gold)'}
-                  strokeDasharray={`${2 * Math.PI * 15}`}
-                  initial={{ strokeDashoffset: 2 * Math.PI * 15 }}
-                  animate={{ strokeDashoffset: 2 * Math.PI * 15 * (1 - progress / 100) }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                  transform="rotate(-90 20 20)"
-                />
-                <text x="20" y="24" textAnchor="middle" fontSize="10" fontWeight="700"
-                  fill={tone === 'destructive' ? 'var(--red)' : tone === 'success' ? 'var(--green)' : tone === 'warning' ? 'var(--amber)' : tone === 'info' ? 'var(--teal)' : 'var(--gold)'}>
-                  {progress}%
-                </text>
-              </svg>
+            <div className="shrink-0 flex items-center justify-center w-12 h-12 rounded-full bg-primary/10 border border-primary/20">
+              <span className="text-xs font-bold text-primary">{progress}%</span>
             </div>
           </div>
 
