@@ -89,7 +89,7 @@ const navSections: NavSection[] = [
       { label: 'Director Command View', icon: LayoutDashboard, href: '/' },
       { label: 'Risk Horizon', icon: AlertTriangle, href: '/risk', badge: 5 },
       { label: 'Controls & Auto-Audit', icon: ShieldCheck, href: '/controls', badge: 17 },
-      { label: 'Controls Library', icon: BookOpen, href: '/controls-library' },
+      { label: 'Owner Assignment', icon: BookOpen, href: '/controls-library' },
       { label: 'SLA Tracker', icon: Clock, href: '/sla', badge: 7 },
     ],
   },
