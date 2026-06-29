@@ -33,9 +33,9 @@ const FREQUENCIES: Frequency[] = [
 ]
 
 const TYPE_META: Record<AuditType, { label: string; Icon: React.ElementType; accent: string; border: string; bg: string; chip: string }> = {
-  controls:   { label: 'Controls',   Icon: Shield,         accent: 'text-navy',    border: 'border-navy/30',    bg: 'bg-navy/6',    chip: 'bg-navy/8 text-navy border-navy/20' },
-  risk:       { label: 'Risk',        Icon: AlertTriangle,  accent: 'text-red',     border: 'border-red/30',     bg: 'bg-red/6',     chip: 'bg-red-bg text-red border-red/20' },
-  compliance: { label: 'Compliance',  Icon: Scale,          accent: 'text-teal',    border: 'border-teal/30',    bg: 'bg-teal/6',    chip: 'bg-teal/8 text-teal border-teal/20' },
+  controls:   { label: 'Controls',   Icon: Shield,         accent: 'text-gold',    border: 'border-gold/30',    bg: 'bg-gold/8',    chip: 'bg-gold/10 text-gold border-gold/25' },
+  risk:       { label: 'Risk',        Icon: AlertTriangle,  accent: 'text-gold',    border: 'border-gold/30',    bg: 'bg-gold/8',    chip: 'bg-gold/10 text-gold border-gold/25' },
+  compliance: { label: 'Compliance',  Icon: Scale,          accent: 'text-gold',    border: 'border-gold/30',    bg: 'bg-gold/8',    chip: 'bg-gold/10 text-gold border-gold/25' },
 }
 
 const STEPS = [
@@ -236,7 +236,7 @@ export function AuditSchedulerModal({
             className={cn(
               'h-9 px-6 text-[12px] font-semibold gap-1.5',
               stepComplete[1] && stepComplete[2] && stepComplete[3]
-                ? 'bg-navy text-white hover:bg-navy-soft'
+                ? 'bg-gold text-navy font-semibold hover:bg-gold/90'
                 : 'bg-secondary text-muted-foreground cursor-not-allowed',
             )}
             onClick={handleSave}
@@ -328,7 +328,7 @@ export function AuditSchedulerModal({
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: -16 }}
               transition={{ duration: 0.2 }}
-              className="p-6 xl:p-8 space-y-6 max-w-2xl"
+              className="p-6 xl:p-8 space-y-6"
             >
 
               {/* Step heading */}
@@ -444,10 +444,10 @@ export function AuditSchedulerModal({
                             onClick={() => toggleProject(p.id)}
                             className={cn(
                               'flex items-center gap-2 px-3 py-2.5 rounded-xl border text-left transition-all text-[12px]',
-                              on ? 'bg-navy/6 border-navy/30 text-navy' : 'bg-background border-line text-muted-foreground hover:border-gold/40 hover:text-foreground',
-                            )}
-                          >
-                            <div className={cn('w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors', on ? 'bg-navy border-navy' : 'border-line bg-background')}>
+                            on ? 'bg-gold/8 border-gold/40 text-gold' : 'bg-background border-line text-muted-foreground hover:border-gold/40 hover:text-foreground',
+                          )}
+                        >
+                          <div className={cn('w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors', on ? 'bg-gold border-gold' : 'border-line bg-background')}>
                               {on && <Check className="w-2.5 h-2.5 text-white" />}
                             </div>
                             <span className="font-mono font-semibold text-[10px] shrink-0">{p.code}</span>
@@ -622,11 +622,11 @@ export function AuditSchedulerModal({
                           onClick={() => setNotifs(n => ({ ...n, [key]: !on }))}
                           className={cn(
                             'w-full flex items-center gap-4 px-4 py-3.5 rounded-xl border text-left transition-all',
-                            on ? 'bg-navy/4 border-navy/20' : 'bg-background border-line hover:border-gold/30',
+                            on ? 'bg-gold/8 border-gold/30' : 'bg-background border-line hover:border-gold/30',
                           )}
                         >
-                          <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors', on ? 'bg-navy/10' : 'bg-secondary')}>
-                            <Icon className={cn('w-4 h-4', on ? 'text-navy' : 'text-muted-foreground')} />
+                          <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors', on ? 'bg-gold/15' : 'bg-secondary')}>
+                            <Icon className={cn('w-4 h-4', on ? 'text-gold' : 'text-muted-foreground')} />
                           </div>
                           <div className="flex-1 min-w-0">
                             <p className={cn('text-[12px] font-semibold', on ? 'text-foreground' : 'text-muted-foreground')}>{label}</p>
@@ -634,7 +634,7 @@ export function AuditSchedulerModal({
                           </div>
                           <div className={cn(
                             'w-10 h-6 rounded-full border flex items-center px-0.5 transition-all shrink-0',
-                            on ? 'bg-navy border-navy justify-end' : 'bg-secondary border-line justify-start',
+                            on ? 'bg-gold border-gold justify-end' : 'bg-secondary border-line justify-start',
                           )}>
                             <motion.div
                               layout
