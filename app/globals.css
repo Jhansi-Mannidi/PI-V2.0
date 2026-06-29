@@ -505,14 +505,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #F7F9FC;
+  background: #94A3B8;
   border-radius: 4px;
-  border: 1px solid #D4A04B;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #F0F4F8;
-  border: 1px solid #D4A04B;
+  background: #7A8A99;
 }
 
 /* Mobile touch improvements */
