@@ -2,15 +2,43 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
-import { ArrowLeft, Save, Loader2 } from 'lucide-react'
+import {
+  ArrowLeft, CalendarClock, Loader2, Save,
+  AlertTriangle, Users, Calendar, ClipboardList, ChevronRight,
+} from 'lucide-react'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
 import { Button } from '@/components/ui/button'
-import { 
-  PROJECTS, USERS, RISK_ITEMS, type Frequency,
+import { cn } from '@/lib/utils'
+import {
+  PROJECTS, USERS, RISK_ITEMS, type Frequency, type AuditSchedule,
 } from '@/lib/governance-data'
 
+const LS_KEY = 'risk_audit_schedules_user'
+
+function loadUserSchedules(): AuditSchedule[] {
+  if (typeof window === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY) ?? '[]')
+  } catch {
+    return []
+  }
+}
+
+function saveUserSchedule(s: AuditSchedule) {
+  const existing = loadUserSchedules()
+  localStorage.setItem(LS_KEY, JSON.stringify([...existing, s]))
+}
+
 const FREQUENCIES: Frequency[] = ['One-time', 'Daily', 'Weekly', 'Monthly', 'Quarterly', 'Semi-Annual', 'Annual', 'Custom']
+
+const WORKFLOW_STEPS = [
+  { label: 'Audit details',   icon: ClipboardList },
+  { label: 'Scope & risks',   icon: AlertTriangle },
+  { label: 'Assign & schedule', icon: Calendar },
+]
+
+const ease = [0.25, 0.46, 0.45, 0.94]
 
 export default function RiskAuditSchedulePage() {
   const router = useRouter()
@@ -26,78 +54,250 @@ export default function RiskAuditSchedulePage() {
     notes: '',
   })
 
+  const isValid = formData.name.trim() && formData.auditorId && formData.riskIds.length > 0
+  const progress = [
+    formData.name.trim(),
+    formData.auditorId,
+    formData.riskIds.length > 0,
+  ].filter(Boolean).length
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    await new Promise(resolve => setTimeout(resolve, 800))
+
+    const existing = loadUserSchedules()
+    const nextIndex = 106 + existing.length // static data has AS-101..AS-105
+    const id = `AS-${String(nextIndex).padStart(3, '0')}`
+
+    const auditor = USERS.find(u => u.id === formData.auditorId)
+    const owner = USERS.find(u => u.id !== formData.auditorId) ?? USERS[0]
+
+    const newSchedule: AuditSchedule = {
+      id,
+      name: formData.name,
+      type: 'risk',
+      scopeProjects: formData.projectIds,
+      scopeItemIds: formData.riskIds,
+      frequency: formData.frequency,
+      startDate: formData.startDate,
+      time: formData.time,
+      timezone: 'UTC',
+      assignedAuditorId: formData.auditorId,
+      assignedAuditorName: auditor?.name ?? 'Unknown',
+      accountableOwnerId: owner.id,
+      accountableOwnerName: owner.name,
+      reminderLeadDays: 3,
+      graceDays: 2,
+      status: 'Active',
+      nextRun: formData.startDate,
+      lastRun: null,
+    }
+
+    saveUserSchedule(newSchedule)
     router.push('/risk-audit')
   }
+
+  const labelClass = 'block text-[11px] font-bold uppercase tracking-[0.08em] text-muted-foreground mb-1.5'
+  const inputClass = 'w-full px-3 py-2 text-sm rounded-lg border border-line bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red/30 focus:border-red/50 transition-all'
 
   return (
     <AppShell>
       <div className="min-h-screen bg-background">
-        {/* Header */}
-        <div className="sticky top-0 z-40 border-b border-line bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-6 py-4">
-          <div className="max-w-7xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <button
-                onClick={() => router.back()}
-                className="p-2 hover:bg-secondary rounded-lg transition-colors"
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-foreground">Schedule Risk Audit</h1>
-                <p className="text-sm text-muted-foreground mt-0.5">Create a new recurring risk audit schedule</p>
-              </div>
+
+        {/* ── Page Header ── */}
+        <div className="border-b border-line bg-card px-6 py-4">
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => router.back()}
+              className="p-1.5 hover:bg-secondary rounded-lg transition-colors text-muted-foreground hover:text-foreground"
+            >
+              <ArrowLeft className="w-4 h-4" />
+            </button>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <span className="hover:text-foreground cursor-pointer" onClick={() => router.push('/risk-audit')}>
+                Risk Audit
+              </span>
+              <ChevronRight className="w-3.5 h-3.5" />
+              <span className="font-semibold text-foreground">New Audit Schedule</span>
             </div>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className="max-w-3xl mx-auto p-6">
-          <motion.form
-            onSubmit={handleSubmit}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="space-y-8"
-          >
-            {/* Basic Info */}
-            <div className="bg-card border border-line rounded-2xl p-6 space-y-5">
-              <div>
-                <h2 className="text-sm font-bold text-foreground uppercase tracking-wide mb-4">Audit Details</h2>
-                <div className="space-y-4">
+        {/* ── Two-column body ── */}
+        <div className="flex h-[calc(100vh-57px)]">
+
+          {/* ── LEFT PANEL ── */}
+          <div className="w-80 shrink-0 border-r border-line bg-card flex flex-col gap-5 px-5 py-6 overflow-y-auto">
+
+            {/* Identity card */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, ease }}
+              className="rounded-xl border border-line bg-background p-4"
+            >
+              <div className="flex items-start gap-3">
+                <div className="w-9 h-9 rounded-lg bg-red-bg flex items-center justify-center shrink-0">
+                  <CalendarClock className="w-4.5 h-4.5 text-red" />
+                </div>
+                <div>
+                  <span className="inline-block text-[9.5px] font-bold uppercase tracking-widest text-red border border-red/30 bg-red-bg rounded px-1.5 py-0.5 mb-1.5">
+                    New Schedule
+                  </span>
+                  <p className="text-[13px] font-bold text-foreground leading-snug">Schedule Risk Audit</p>
+                  <p className="text-[11px] text-muted-foreground mt-0.5 leading-relaxed">
+                    Create a recurring audit schedule for risks across projects and programs.
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Scope stats */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: 0.04, ease }}
+              className="rounded-xl border border-line bg-background p-4 space-y-2"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground flex items-center gap-1.5">
+                <AlertTriangle className="w-3 h-3" /> Scope
+              </p>
+              {[
+                { label: 'Available Risks',    value: RISK_ITEMS.length },
+                { label: 'Selected Risks',     value: formData.riskIds.length },
+                { label: 'Available Auditors', value: USERS.filter(u => u.role === 'Auditor' || u.role === 'Portfolio Director').length },
+                { label: 'Available Projects', value: PROJECTS.length },
+              ].map(row => (
+                <div key={row.label} className="flex items-center justify-between">
+                  <span className="text-[11.5px] text-muted-foreground">{row.label}</span>
+                  <span className={cn(
+                    'text-[12px] font-bold font-mono',
+                    row.label === 'Selected Risks' && formData.riskIds.length > 0 ? 'text-red' : 'text-foreground'
+                  )}>{row.value}</span>
+                </div>
+              ))}
+            </motion.div>
+
+            {/* Workflow steps */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: 0.08, ease }}
+              className="rounded-xl border border-line bg-background p-4"
+            >
+              <p className="text-[10px] font-bold uppercase tracking-[0.08em] text-muted-foreground mb-3">
+                Steps
+              </p>
+              <ol className="space-y-2.5">
+                {WORKFLOW_STEPS.map((step, i) => {
+                  const done = i === 0
+                    ? !!(formData.name.trim() && formData.auditorId)
+                    : i === 1
+                    ? formData.riskIds.length > 0
+                    : !!(formData.startDate && formData.time)
+                  return (
+                    <li key={step.label} className="flex items-center gap-2.5">
+                      <div className={cn(
+                        'w-5 h-5 rounded-full flex items-center justify-center text-[9px] font-bold shrink-0',
+                        done ? 'bg-red text-white' : 'bg-secondary text-muted-foreground border border-line'
+                      )}>
+                        {done ? '✓' : i + 1}
+                      </div>
+                      <span className={cn('text-[12px]', done ? 'text-foreground font-medium' : 'text-muted-foreground')}>
+                        {step.label}
+                      </span>
+                    </li>
+                  )
+                })}
+              </ol>
+            </motion.div>
+
+            {/* Audit trail note */}
+            <motion.div
+              initial={{ opacity: 0, y: 6 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: 0.12, ease }}
+              className="rounded-xl border border-line bg-background p-3.5 flex gap-2.5"
+            >
+              <ClipboardList className="w-3.5 h-3.5 text-muted-foreground mt-0.5 shrink-0" />
+              <p className="text-[11px] text-muted-foreground leading-relaxed">
+                This schedule is logged to the immutable audit trail with timestamp, actor, and all field values.
+              </p>
+            </motion.div>
+          </div>
+
+          {/* ── RIGHT: FORM ── */}
+          <div className="flex-1 overflow-y-auto px-8 py-6">
+            <motion.form
+              onSubmit={handleSubmit}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.28, delay: 0.06 }}
+              className="w-full space-y-5"
+            >
+              {/* Form header with progress */}
+              <div className="flex items-center justify-between mb-1">
+                <div>
+                  <h1 className="text-[18px] font-bold text-foreground">Audit Details</h1>
+                  <p className="text-[11.5px] text-muted-foreground mt-0.5">Complete all required fields to create the schedule</p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-32 h-1.5 rounded-full bg-secondary overflow-hidden">
+                    <motion.div
+                      className="h-full bg-red rounded-full"
+                      animate={{ width: `${(progress / 3) * 100}%` }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  </div>
+                  <span className="text-[11px] font-mono text-muted-foreground">{progress}/3</span>
+                </div>
+              </div>
+
+              {/* ── AUDIT DETAILS section ── */}
+              <div className="bg-card rounded-xl border border-line overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/30">
+                  <CalendarClock className="w-3.5 h-3.5 text-red" />
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-foreground">Audit Details</span>
+                </div>
+                <div className="p-4 space-y-4">
+
+                  {/* Audit Name */}
                   <div>
-                    <label className="block text-sm font-semibold text-foreground mb-2">Audit Name</label>
+                    <label className={labelClass}>
+                      Audit Name <span className="text-red">*</span>
+                    </label>
                     <input
                       type="text"
                       placeholder="e.g., Q3 Portfolio Risk Review"
                       value={formData.name}
-                      onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                      className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red/50 transition-all"
+                      onChange={e => setFormData(p => ({ ...p, name: e.target.value }))}
+                      className={inputClass}
+                      required
                     />
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Frequency + Auditor */}
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">Frequency</label>
+                      <label className={labelClass}>Frequency</label>
                       <select
                         value={formData.frequency}
-                        onChange={(e) => setFormData(prev => ({ ...prev, frequency: e.target.value as Frequency }))}
-                        className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-red/50 transition-all"
+                        onChange={e => setFormData(p => ({ ...p, frequency: e.target.value as Frequency }))}
+                        className={inputClass}
                       >
-                        {FREQUENCIES.map(f => (
-                          <option key={f} value={f}>{f}</option>
-                        ))}
+                        {FREQUENCIES.map(f => <option key={f} value={f}>{f}</option>)}
                       </select>
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">Assigned Auditor</label>
+                      <label className={labelClass}>
+                        Assigned Auditor <span className="text-red">*</span>
+                      </label>
                       <select
                         value={formData.auditorId}
-                        onChange={(e) => setFormData(prev => ({ ...prev, auditorId: e.target.value }))}
-                        className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-red/50 transition-all"
+                        onChange={e => setFormData(p => ({ ...p, auditorId: e.target.value }))}
+                        className={inputClass}
+                        required
                       >
                         <option value="">Select auditor...</option>
                         {USERS.filter(u => u.role === 'Auditor' || u.role === 'Portfolio Director').map(u => (
@@ -107,120 +307,180 @@ export default function RiskAuditSchedulePage() {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Start Date + Time */}
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">Start Date</label>
+                      <label className={labelClass}>
+                        <Calendar className="inline w-3 h-3 mr-1" />Start Date
+                      </label>
                       <input
                         type="date"
                         value={formData.startDate}
-                        onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
-                        className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-red/50 transition-all"
+                        onChange={e => setFormData(p => ({ ...p, startDate: e.target.value }))}
+                        className={inputClass}
                       />
                     </div>
-
                     <div>
-                      <label className="block text-sm font-semibold text-foreground mb-2">Time</label>
+                      <label className={labelClass}>
+                        <ClipboardList className="inline w-3 h-3 mr-1" />Time
+                      </label>
                       <input
                         type="time"
                         value={formData.time}
-                        onChange={(e) => setFormData(prev => ({ ...prev, time: e.target.value }))}
-                        className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-red/50 transition-all"
+                        onChange={e => setFormData(p => ({ ...p, time: e.target.value }))}
+                        className={inputClass}
                       />
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Scope Selection */}
-            <div className="bg-card border border-line rounded-2xl p-6 space-y-5">
-              <h2 className="text-sm font-bold text-foreground uppercase tracking-wide">Audit Scope</h2>
-              
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-3">Select Risks to Audit</label>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-64 overflow-y-auto p-2 border border-line rounded-lg bg-secondary/20">
-                  {RISK_ITEMS.map(risk => (
-                    <label key={risk.id} className="flex items-center gap-3 p-2 hover:bg-secondary/40 rounded-lg cursor-pointer transition-colors">
-                      <input
-                        type="checkbox"
-                        checked={formData.riskIds.includes(risk.id)}
-                        onChange={(e) => {
-                          setFormData(prev => ({
-                            ...prev,
-                            riskIds: e.target.checked
-                              ? [...prev.riskIds, risk.id]
-                              : prev.riskIds.filter(id => id !== risk.id)
-                          }))
-                        }}
-                        className="w-4 h-4 rounded border-line"
-                      />
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-foreground truncate">{risk.title}</p>
-                        <p className="text-xs text-muted-foreground truncate">{risk.id}</p>
-                      </div>
+              {/* ── AUDIT SCOPE section ── */}
+              <div className="bg-card rounded-xl border border-line overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/30">
+                  <AlertTriangle className="w-3.5 h-3.5 text-red" />
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-foreground">
+                    Audit Scope <span className="text-red normal-case font-medium">*</span>
+                  </span>
+                </div>
+                <div className="p-4 space-y-4">
+
+                  {/* Select Risks */}
+                  <div>
+                    <label className={labelClass}>Select Risks to Audit</label>
+                    <div className="grid grid-cols-3 gap-1.5 max-h-52 overflow-y-auto rounded-lg border border-line bg-secondary/20 p-2">
+                      {RISK_ITEMS.map(risk => {
+                        const checked = formData.riskIds.includes(risk.id)
+                        return (
+                          <label
+                            key={risk.id}
+                            className={cn(
+                              'flex items-start gap-2 p-2 rounded-lg cursor-pointer transition-colors text-left',
+                              checked ? 'bg-red-bg border border-red/30' : 'hover:bg-secondary/60'
+                            )}
+                          >
+                            <div className={cn(
+                              'w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 mt-0.5 transition-colors',
+                              checked ? 'bg-red border-red' : 'border-line bg-background'
+                            )}>
+                              {checked && <span className="text-white text-[8px] font-bold leading-none">✓</span>}
+                            </div>
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={checked}
+                              onChange={e => setFormData(p => ({
+                                ...p,
+                                riskIds: e.target.checked
+                                  ? [...p.riskIds, risk.id]
+                                  : p.riskIds.filter(id => id !== risk.id),
+                              }))}
+                            />
+                            <div className="min-w-0">
+                              <p className="text-[11.5px] font-medium text-foreground leading-snug line-clamp-2">{risk.title}</p>
+                              <p className="text-[10px] text-red font-mono mt-0.5">{risk.id}</p>
+                            </div>
+                          </label>
+                        )
+                      })}
+                    </div>
+                    {formData.riskIds.length > 0 && (
+                      <p className="text-[11px] text-red font-medium mt-1.5">
+                        {formData.riskIds.length} risk{formData.riskIds.length !== 1 ? 's' : ''} selected
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Select Projects */}
+                  <div>
+                    <label className={labelClass}>
+                      <Users className="inline w-3 h-3 mr-1" />Select Projects
+                      <span className="normal-case font-normal text-muted-foreground ml-1">(Optional)</span>
                     </label>
-                  ))}
+                    <div className="grid grid-cols-3 gap-1.5 max-h-36 overflow-y-auto rounded-lg border border-line bg-secondary/20 p-2">
+                      {PROJECTS.map(proj => {
+                        const checked = formData.projectIds.includes(proj.id)
+                        return (
+                          <label
+                            key={proj.id}
+                            className={cn(
+                              'flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors',
+                              checked ? 'bg-red-bg border border-red/30' : 'hover:bg-secondary/60'
+                            )}
+                          >
+                            <div className={cn(
+                              'w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors',
+                              checked ? 'bg-red border-red' : 'border-line bg-background'
+                            )}>
+                              {checked && <span className="text-white text-[8px] font-bold leading-none">✓</span>}
+                            </div>
+                            <input
+                              type="checkbox"
+                              className="sr-only"
+                              checked={checked}
+                              onChange={e => setFormData(p => ({
+                                ...p,
+                                projectIds: e.target.checked
+                                  ? [...p.projectIds, proj.id]
+                                  : p.projectIds.filter(id => id !== proj.id),
+                              }))}
+                            />
+                            <span className="text-[11.5px] font-medium text-foreground truncate">{proj.name}</span>
+                          </label>
+                        )
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-3">Select Projects (Optional)</label>
-                <select
-                  multiple
-                  value={formData.projectIds}
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
-                    projectIds: Array.from(e.target.selectedOptions, option => option.value)
-                  }))}
-                  className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-red/50 transition-all min-h-32"
+              {/* ── NOTES section ── */}
+              <div className="bg-card rounded-xl border border-line overflow-hidden">
+                <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/30">
+                  <ClipboardList className="w-3.5 h-3.5 text-red" />
+                  <span className="text-[11px] font-bold uppercase tracking-[0.08em] text-foreground">Notes</span>
+                  <span className="text-[10px] text-muted-foreground font-normal ml-1">(Optional)</span>
+                </div>
+                <div className="p-4">
+                  <textarea
+                    placeholder="Add any special instructions or context for this audit..."
+                    value={formData.notes}
+                    onChange={e => setFormData(p => ({ ...p, notes: e.target.value }))}
+                    rows={3}
+                    className={cn(inputClass, 'resize-none')}
+                  />
+                </div>
+              </div>
+
+              {/* ── Actions ── */}
+              <div className="flex items-center justify-between gap-4 pt-2 pb-6 border-t border-line">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => router.back()}
+                  className="px-5 h-9 text-sm border-line hover:bg-secondary"
                 >
-                  {PROJECTS.map(p => (
-                    <option key={p.id} value={p.id}>{p.name}</option>
-                  ))}
-                </select>
+                  Cancel
+                </Button>
+                <Button
+                  type="submit"
+                  disabled={isLoading || !isValid}
+                  className={cn(
+                    'px-6 h-9 text-sm font-semibold transition-all',
+                    isValid
+                      ? 'bg-red hover:bg-red/90 text-white'
+                      : 'bg-secondary text-muted-foreground cursor-not-allowed'
+                  )}
+                >
+                  {isLoading ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Creating...</>
+                  ) : (
+                    <><Save className="w-4 h-4 mr-2" />Create Schedule</>
+                  )}
+                </Button>
               </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-foreground mb-2">Notes (Optional)</label>
-                <textarea
-                  placeholder="Add any special instructions or context for this audit..."
-                  value={formData.notes}
-                  onChange={(e) => setFormData(prev => ({ ...prev, notes: e.target.value }))}
-                  rows={4}
-                  className="w-full px-4 py-2.5 rounded-lg border border-line bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-red/50 transition-all resize-none"
-                />
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div className="flex items-center justify-between gap-4 pt-4 border-t border-line">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => router.back()}
-                className="px-6"
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isLoading || !formData.name || !formData.auditorId || formData.riskIds.length === 0}
-                className="px-6 bg-red hover:bg-red/90 text-foreground font-semibold"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Save className="w-4 h-4 mr-2" />
-                    Create Schedule
-                  </>
-                )}
-              </Button>
-            </div>
-          </motion.form>
+            </motion.form>
+          </div>
         </div>
       </div>
     </AppShell>

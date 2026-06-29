@@ -17,8 +17,23 @@ import {
   type AuditSchedule,
 } from '@/lib/governance-data'
 
+const LS_KEY = 'risk_audit_schedules_user'
+
 export default function RiskAuditPage() {
   const kpis = getRiskAuditKpis()
+
+  const [userSchedules, setUserSchedules] = React.useState<AuditSchedule[]>([])
+
+  React.useEffect(() => {
+    try {
+      const stored = JSON.parse(localStorage.getItem(LS_KEY) ?? '[]') as AuditSchedule[]
+      setUserSchedules(stored)
+    } catch {
+      setUserSchedules([])
+    }
+  }, [])
+
+  const allSchedules = [...RISK_AUDIT_SCHEDULES, ...userSchedules]
 
   const kpiData = [
     { label: 'Reviewed', value: kpis.reviewed, sub: 'completed', icon: CheckCircle2, tone: 'green' as const },
@@ -91,7 +106,7 @@ export default function RiskAuditPage() {
                 Are our risks being audited at the right frequency, with findings tracked to resolution?
               </h2>
               <p className="text-[11.5px] text-muted-foreground mt-0.5">
-                {RISK_AUDIT_SCHEDULES.length} risk audit schedules · {RISK_ITEMS.length} tracked risks · {kpis.openFindings} open findings
+                {allSchedules.length} risk audit schedules · {RISK_ITEMS.length} tracked risks · {kpis.openFindings} open findings
               </p>
             </div>
           </div>
@@ -103,7 +118,7 @@ export default function RiskAuditPage() {
           accentBg="bg-red"
           accentBorder="border-red"
           schedulePageHref="/risk-audit/schedule"
-          schedules={RISK_AUDIT_SCHEDULES}
+          schedules={allSchedules}
           occurrences={RISK_AUDIT_OCCURRENCES}
           kpis={kpiData}
           renderScheduleExtra={renderScopeCell}
