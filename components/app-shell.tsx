@@ -88,14 +88,14 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Director Command View', icon: LayoutDashboard, href: '/' },
       { label: 'Risk Horizon', icon: AlertTriangle, href: '/risk', badge: 5 },
-      { label: 'Controls & Auto-Audit', icon: ShieldCheck, href: '/controls', badge: 17 },
-      { label: 'Owner Assignment', icon: BookOpen, href: '/controls-library' },
-      { label: 'SLA Tracker', icon: Clock, href: '/sla', badge: 7 },
     ],
   },
   {
     title: 'GOVERNANCE & AUDIT',
     items: [
+      { label: 'Controls & Auto-Audit', icon: ShieldCheck, href: '/controls', badge: 17 },
+      { label: 'Owner Assignment', icon: BookOpen, href: '/controls-library' },
+      { label: 'SLA Tracker', icon: Clock, href: '/sla', badge: 7 },
       { label: 'Controls Audit', icon: ShieldCheck, href: '/controls-audit', badge: 3 },
       { label: 'Risk Audit', icon: ClipboardList, href: '/risk-audit', badge: 1 },
       { label: 'Compliance Audit', icon: Scale, href: '/compliance-audit', badge: 2 },
