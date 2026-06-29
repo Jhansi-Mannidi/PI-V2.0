@@ -73,7 +73,7 @@ const stages: ApprovalStage[] = [
   },
   {
     num: 4, name: 'Anu Final Approval', shortName: 'Anu Approval',
-    owner: 'Anu Reddi', ownerEmail: 'anu.reddi@portfolio.io',
+    owner: 'Anu Reddy', ownerEmail: 'anu.reddi@portfolio.io',
     tool: 'eBuilder', status: 'completed', elapsedDays: 2,
     completedDate: '2025-12-19', expectedDuration: '1-3 days',
     startedAt: '2025-12-17',
@@ -94,14 +94,14 @@ const stages: ApprovalStage[] = [
   },
   {
     num: 7, name: 'FP&A Review', shortName: 'FP&A Review',
-    owner: 'Sophia Lamb', ownerEmail: 'sophia.lamb@finance.io',
+    owner: 'Sophia Lam', ownerEmail: 'sophia.lamb@finance.io',
     tool: 'SAP', status: 'current', elapsedDays: 73,
     expectedDuration: '10-15 days median',
     startedAt: '2025-12-24',
     varianceDays: 58,
     events: [
       { date: '2025-12-24 10:00', type: 'event', content: 'Distributed to Finance approver pool (~7-8 reviewers)' },
-      { date: '2026-01-12 14:30', type: 'email', author: 'Sophia Lamb', content: 'Acknowledged receipt — routing through standard SAP queue' },
+      { date: '2026-01-12 14:30', type: 'email', author: 'Sophia Lam', content: 'Acknowledged receipt — routing through standard SAP queue' },
       { date: '2026-02-15 11:05', type: 'manual', author: 'Hasit Chetal', content: 'Sophia confirmed via Slack that her primary approver A is OOO until 2026-02-22 — task may rotate to backup B.' },
     ],
   },
@@ -454,7 +454,7 @@ export default function ApprovalPipelinePage() {
               </div>
               <p className="text-[12px] text-foreground/90 leading-relaxed mb-3">
                 This stage is currently inside SAP&apos;s internal Finance approval flow. SAP distributes the
-                Appropriation Request to approximately 7-8 internal approvers (Sophia Lamb&apos;s team). The
+                Appropriation Request to approximately 7-8 internal approvers (Sophia Lam&apos;s team). The
                 individual approver currently holding the task is not exposed by SAP.
               </p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
@@ -477,7 +477,7 @@ export default function ApprovalPipelinePage() {
               </p>
               <div className="flex flex-wrap gap-2">
                 <Button onClick={() => setShowNudgeModal(true)} className="h-8 text-[11px] bg-gold text-navy">
-                  <Send className="w-3 h-3 mr-1.5" /> Nudge Sophia Lamb
+                  <Send className="w-3 h-3 mr-1.5" /> Nudge Sophia Lam
                 </Button>
                 <Button
                   variant="outline"
@@ -492,7 +492,7 @@ export default function ApprovalPipelinePage() {
                       context: [
                         { label: 'Project', value: 'NCH-Hub1-1' },
                         { label: 'Stage', value: 'FP&A Review (#7)' },
-                        { label: 'Owner', value: 'Sophia Lamb' },
+                        { label: 'Owner', value: 'Sophia Lam' },
                         { label: 'Elapsed', value: '73 days' },
                       ],
                       fields: [
@@ -847,7 +847,7 @@ export default function ApprovalPipelinePage() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-foreground/40 backdrop-blur-sm p-4" onClick={() => setShowNudgeModal(false)}>
             <div className="w-full max-w-lg bg-card rounded-xl border border-line shadow-xl p-5" onClick={(e) => e.stopPropagation()}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-sm font-semibold text-foreground">Nudge Sophia Lamb · Slack DM</h3>
+                <h3 className="text-sm font-semibold text-foreground">Nudge Sophia Lam · Slack DM</h3>
                 <button onClick={() => setShowNudgeModal(false)} className="text-muted-foreground hover:text-foreground"><X className="w-4 h-4" /></button>
               </div>
               <p className="text-[11px] text-muted-foreground mb-3">

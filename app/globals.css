@@ -4,69 +4,69 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  /* Midnight Executive - Light Theme */
+  /* Light Blue-Grey & Rich Gold Theme */
   --background: #F7F9FC;
-  --foreground: #1F2937;
+  --foreground: #2C2C2C;
   --card: #FFFFFF;
-  --card-foreground: #1F2937;
+  --card-foreground: #2C2C2C;
   --popover: #FFFFFF;
-  --popover-foreground: #1F2937;
-  --primary: #0B1F3A;
+  --popover-foreground: #2C2C2C;
+  --primary: #D4A04B;
   --primary-foreground: #FFFFFF;
   --secondary: #F7F9FC;
-  --secondary-foreground: #0B1F3A;
-  --muted: #F7F9FC;
-  --muted-foreground: #64748B;
-  --accent: #D4A04C;
-  --accent-foreground: #0B1F3A;
-  --destructive: #DC2626;
+  --secondary-foreground: #2C2C2C;
+  --muted: #F0F4F8;
+  --muted-foreground: #757575;
+  --accent: #D4A04B;
+  --accent-foreground: #FFFFFF;
+  --destructive: #E53935;
   --destructive-foreground: #FFFFFF;
   --border: #E2E8F0;
-  --input: #E2E8F0;
-  --ring: #D4A04C;
+  --input: #F0F4F8;
+  --ring: #D4A04B;
   
-  /* Extended palette - Light */
-  --navy: #0B1F3A;
-  --navy-soft: #1C3553;
-  --navy-mid: #253D5C;
-  --ink: #1F2937;
-  --slate: #64748B;
-  --paper: #F7F9FC;
-  --cream: #F1E7CE;
-  --cream-dark: #E8DCBF;
-  --gold: #D4A04C;
+  /* Extended palette - Light Blue-Grey & Rich Gold */
+  --navy: #2C2C2C;
+  --navy-soft: #4A4A4A;
+  --navy-mid: #616161;
+  --ink: #2C2C2C;
+  --slate: #757575;
+  --paper: #FFFFFF;
+  --cream: #F7F9FC;
+  --cream-dark: #E2E8F0;
+  --gold: #D4A04B;
   --gold-soft: #E8C888;
   --gold-light: #F5E6C8;
-  --gold-pale: #FEF9EF;
-  --teal: #2B8A8A;
-  --teal-soft: #E6F4F4;
-  --green: #16A34A;
-  --green-bg: #F0FDF4;
-  --amber: #D97706;
-  --amber-bg: #FFFBEB;
-  --red: #DC2626;
-  --red-bg: #FEF2F2;
-  --red-dark: #991B1B;
+  --gold-pale: #F7F9FC;
+  --teal: #388E8E;
+  --teal-soft: #E8F5F5;
+  --green: #43A047;
+  --green-bg: #E8F5E9;
+  --amber: #FB8C00;
+  --amber-bg: #FFF3E0;
+  --red: #E53935;
+  --red-bg: #FFEBEE;
+  --red-dark: #C62828;
   --line: #E2E8F0;
   
   /* Charts */
-  --chart-1: #0B1F3A;
-  --chart-2: #D4A04C;
+  --chart-1: #2C2C2C;
+  --chart-2: #D4A04B;
   --chart-3: #2B8A8A;
   --chart-4: #16A34A;
   --chart-5: #D97706;
   
   --radius: 0.5rem;
   
-  /* Sidebar - Light (clean white with subtle borders) */
+  /* Sidebar - Light (clean white with rich gold accents) */
   --sidebar: #FFFFFF;
-  --sidebar-foreground: #1F2937;
-  --sidebar-primary: #D4A04C;
+  --sidebar-foreground: #2C2C2C;
+  --sidebar-primary: #D4A04B;
   --sidebar-primary-foreground: #FFFFFF;
   --sidebar-accent: #F7F9FC;
-  --sidebar-accent-foreground: #1F2937;
+  --sidebar-accent-foreground: #2C2C2C;
   --sidebar-border: #E2E8F0;
-  --sidebar-ring: #D4A04C;
+  --sidebar-ring: #D4A04B;
   
   /* Shadows - Clean, subtle elevation */
   --shadow-xs: 0 1px 2px rgba(0,0,0,0.04);
@@ -231,6 +231,11 @@
   * {
     @apply border-border outline-ring/50;
     box-sizing: border-box;
+  }
+
+  input, select, textarea, button {
+    font-family: var(--font-sans);
+    font-feature-settings: 'cv02', 'cv03', 'cv04', 'cv11';
   }
   
   body {
@@ -505,12 +510,12 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #E6E8EB;
   border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #CBD5E1;
 }
 
 /* Mobile touch improvements */

@@ -498,7 +498,7 @@ function CurrentStageDetail() {
                     label: 'New Owner',
                     required: true,
                     options: [
-                      { value: 'sl', label: 'Sophia Lamb — Sr PM' },
+                      { value: 'sl', label: 'Sophia Lam — Sr PM' },
                       { value: 'me', label: 'Michael Ellis — Construction Mgr' },
                       { value: 'jc', label: 'Jenna Carter — Cost Controls' },
                       { value: 'hc', label: 'Hasit Chetal — Controls Lead' },

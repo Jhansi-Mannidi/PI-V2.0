@@ -25,13 +25,13 @@ import Link from 'next/link'
 import { AnimNum, FadeUp } from '@/components/animated-primitives'
 
 const dependencies = [
-  { id: 'D-001', upstream: 'PYB-Hub1-1&2&3', downstream: 'NCH-Hub1-1', type: 'Power Interconnect', status: 'On Track', risk: 'Low', owner: 'Sophia Lamb', dueDate: 'Jun 15, 2026', daysDelta: 0, notes: 'Substation tie-in coordinated with utility' },
+  { id: 'D-001', upstream: 'PYB-Hub1-1&2&3', downstream: 'NCH-Hub1-1', type: 'Power Interconnect', status: 'On Track', risk: 'Low', owner: 'Sophia Lam', dueDate: 'Jun 15, 2026', daysDelta: 0, notes: 'Substation tie-in coordinated with utility' },
   { id: 'D-002', upstream: 'HDL-Hub1-1&2&3', downstream: 'GOR-Hub1-1&2', type: 'Fiber Backbone', status: 'At Risk', risk: 'Medium', owner: 'Brian Smith', dueDate: 'May 28, 2026', daysDelta: -5, notes: 'Vendor delay on long-lead splicing equipment' },
   { id: 'D-003', upstream: 'CHB-Hub1-1&2&3', downstream: 'EWD-Hub2-1&2&3', type: 'Water Rights Transfer', status: 'Critical', risk: 'High', owner: 'Alice Cox', dueDate: 'May 20, 2026', daysDelta: -12, notes: 'Regulatory approval pending state board review' },
   { id: 'D-004', upstream: 'HRF-Hub1-1&2&3', downstream: 'CLB-Hub2-1&2', type: 'Shared Easement', status: 'On Track', risk: 'Low', owner: 'Hasit Chetal', dueDate: 'Jul 01, 2026', daysDelta: 3, notes: 'Legal review complete, signing scheduled' },
   { id: 'D-005', upstream: 'SGR-Hub1-2&3', downstream: 'PYB-Hub1-1&2&3', type: 'Cooling Loop', status: 'At Risk', risk: 'Medium', owner: 'Anu Reddy', dueDate: 'Jun 10, 2026', daysDelta: -3, notes: 'Pipe sizing revision required per MEP update' },
   { id: 'D-006', upstream: 'NCH-Hub1-1', downstream: 'HDL-Hub1-1&2&3', type: 'Access Road', status: 'On Track', risk: 'Low', owner: 'Sean Keegan', dueDate: 'Jun 22, 2026', daysDelta: 5, notes: 'Grading complete, paving in progress' },
-  { id: 'D-007', upstream: 'GOR-Hub1-1&2', downstream: 'CHB-Hub1-1&2&3', type: 'Transformer Allocation', status: 'Critical', risk: 'High', owner: 'Sophia Lamb', dueDate: 'May 25, 2026', daysDelta: -8, notes: 'Utility capacity constraint under negotiation' },
+  { id: 'D-007', upstream: 'GOR-Hub1-1&2', downstream: 'CHB-Hub1-1&2&3', type: 'Transformer Allocation', status: 'Critical', risk: 'High', owner: 'Sophia Lam', dueDate: 'May 25, 2026', daysDelta: -8, notes: 'Utility capacity constraint under negotiation' },
   { id: 'D-008', upstream: 'EWD-Hub2-1&2&3', downstream: 'SGR-Hub1-2&3', type: 'Network Handoff', status: 'On Track', risk: 'Low', owner: 'Brian Smith', dueDate: 'Jul 15, 2026', daysDelta: 10, notes: 'NOC coordination scheduled for Q3' },
 ]
 

@@ -43,6 +43,9 @@ import {
   PenLine,
   Layers,
   ShieldCheck,
+  Scale,
+  ClipboardList,
+  BookOpen,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useAI } from '@/components/ai-provider'
@@ -85,8 +88,18 @@ const navSections: NavSection[] = [
     items: [
       { label: 'Director Command View', icon: LayoutDashboard, href: '/' },
       { label: 'Risk Horizon', icon: AlertTriangle, href: '/risk', badge: 5 },
+    ],
+  },
+  {
+    title: 'GOVERNANCE & AUDIT',
+    items: [
+      { label: 'Audit Intelligence Hub', icon: Layers, href: '/audit-hub' },
       { label: 'Controls & Auto-Audit', icon: ShieldCheck, href: '/controls', badge: 17 },
+      { label: 'Owner Assignment', icon: BookOpen, href: '/controls-library' },
       { label: 'SLA Tracker', icon: Clock, href: '/sla', badge: 7 },
+      { label: 'Controls Audit', icon: ShieldCheck, href: '/controls-audit', badge: 3 },
+      { label: 'Risk Audit', icon: ClipboardList, href: '/risk-audit', badge: 1 },
+      { label: 'Compliance Audit', icon: Scale, href: '/compliance-audit', badge: 2 },
     ],
   },
   {
@@ -135,10 +148,10 @@ const navSections: NavSection[] = [
 
 const personas = [
   { name: 'Brian Smith', role: 'Portfolio Director', initials: 'BS', color: 'gold' },
-  { name: 'Anu Reddi', role: 'Senior Director — Portfolio Approver', initials: 'AR', color: 'gold' },
+  { name: 'Anu Reddy', role: 'Senior Director — Portfolio Approver', initials: 'AR', color: 'gold' },
   { name: 'Hasit Chetal', role: 'Portfolio Controls Lead', initials: 'HC', color: 'gold' },
   { name: 'Brian Steinberg', role: 'Program Manager — Central', initials: 'BS', color: 'gold' },
-  { name: 'Sophia Lamb', role: 'Finance Partner — FP&A', initials: 'SL', color: 'gold' },
+  { name: 'Sophia Lam', role: 'Finance Partner — FP&A', initials: 'SL', color: 'gold' },
   { name: 'Sreya Mukherjee', role: 'LineSight — Operational Staff', initials: 'SM', color: 'gold' },
 ]
 
@@ -149,12 +162,16 @@ const personaAccess: Record<string, Set<string> | 'ALL'> = {
   'Brian Smith': 'ALL',
 
   // Senior Director — Final Approver — Full Access (read-and-approve focus)
-  'Anu Reddi': 'ALL',
+  'Anu Reddy': 'ALL',
 
   // Portfolio Controls Lead — Operations Lead — Full Ops
   // Grayed: Annual Planning, Director Command View, Variance Explainer, Party Intelligence, Executive Deck
   'Hasit Chetal': new Set([
-    '/risk', '/controls', '/sla',
+    '/risk', '/controls', '/controls-library',
+    '/controls-audit', '/controls-audit/schedule',
+    '/risk-audit', '/risk-audit/schedule',
+    '/compliance-audit', '/compliance-audit/schedule',
+    '/sla',
     '/lead', '/funding', '/approval-pipeline', '/bdp-factcheck', '/termsheet',
     '/analyst', '/throughput', '/program', '/projects', '/milestones', '/inbox', '/budget', '/change-orders',
     '/concurrent-hub',
@@ -176,7 +193,7 @@ const personaAccess: Record<string, Set<string> | 'ALL'> = {
   ]),
 
   // Finance Partner (FP&A) — Funding-Cycle Scope
-  'Sophia Lamb': new Set([
+  'Sophia Lam': new Set([
     '/funding', '/approval-pipeline', '/bdp-factcheck', '/termsheet',
     '/budget', '/change-orders', '/sla',
     '/insights', '/reports',
@@ -318,37 +335,6 @@ export function AppShell({ children, title = 'Director Command View', subtitle, 
       </div>
       
       {/* Mobile Brand header gradient for stunning effect in dark mode */}
-
-      {/* Persona Switcher */}
-      <div className="px-3 py-2.5 border-b border-sidebar-border">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="w-full flex items-center gap-2.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-gold/8 to-transparent hover:from-gold/12 hover:bg-sidebar-accent/70 transition-all duration-200">
-              <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gold/25 to-gold/10 border border-gold/35 shadow-[0_6px_18px_rgba(212,160,76,0.14)] flex items-center justify-center">
-                <span className="text-[9px] font-bold text-gold">{currentPersona.initials}</span>
-              </div>
-              <div className="flex-1 text-left min-w-0">
-                <p className="text-[11.5px] font-semibold text-sidebar-foreground truncate tracking-[-0.01em]">{currentPersona.name}</p>
-                <p className="text-[9.5px] text-sidebar-foreground/55 truncate">{currentPersona.role}</p>
-              </div>
-              <ChevronDown className="w-3 h-3 text-sidebar-foreground/50 shrink-0" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-[230px]">
-            {personas.map((persona) => (
-              <DropdownMenuItem key={persona.name} onClick={() => setCurrentPersona(persona)} className="flex items-center gap-3 cursor-pointer">
-                <div className="w-8 h-8 rounded-full bg-gold/20 flex items-center justify-center">
-                  <span className="text-[10px] font-bold text-gold">{persona.initials}</span>
-                </div>
-                <div>
-                  <p className="text-[12.5px] font-medium">{persona.name}</p>
-                  <p className="text-[10.5px] text-muted-foreground">{persona.role}</p>
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
 
       {/* Navigation */}
       <nav className="flex-1 overflow-y-auto py-3 px-3">
@@ -569,6 +555,38 @@ export function AppShell({ children, title = 'Director Command View', subtitle, 
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Role Selector - hidden on small screens */}
+            <div className="hidden md:block">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="h-8 px-3 rounded-md text-xs font-medium border border-border bg-background hover:bg-accent transition-colors flex items-center gap-2 whitespace-nowrap">
+                    <span className="text-muted-foreground">{currentPersona.role}</span>
+                    <ChevronDown className="w-3 h-3 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-[280px]">
+                  {personas.map((persona) => (
+                    <DropdownMenuItem 
+                      key={persona.name} 
+                      onClick={() => setCurrentPersona(persona)} 
+                      className="flex items-center gap-3 cursor-pointer py-2"
+                    >
+                      <div className="w-6 h-6 rounded-full bg-gold/20 flex items-center justify-center shrink-0">
+                        <span className="text-[9px] font-bold text-gold">{persona.initials}</span>
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[12px] font-medium">{persona.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate">{persona.role}</p>
+                      </div>
+                      {currentPersona.name === persona.name && (
+                        <Check className="w-3.5 h-3.5 text-gold shrink-0" />
+                      )}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
           </div>
 
           <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
@@ -643,8 +661,8 @@ export function AppShell({ children, title = 'Director Command View', subtitle, 
             </div>
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-auto px-2 py-3 sm:px-3 sm:py-4 lg:px-4 lg:py-5 bg-background">
+        {/* Page Content — position:relative so PagePanel can fill it absolutely */}
+        <main className="relative flex-1 overflow-auto px-2 py-3 sm:px-3 sm:py-4 lg:px-4 lg:py-5 bg-background">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

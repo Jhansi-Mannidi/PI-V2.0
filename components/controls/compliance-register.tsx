@@ -55,13 +55,13 @@ export function ComplianceRegister() {
                   </div>
                   <p className="text-[13px] font-medium text-foreground mt-0.5 truncate">{pol.title}</p>
                 </div>
-                <div className="hidden sm:flex items-center gap-2 shrink-0">
-                  <div className="w-24 h-1.5 rounded-full bg-secondary overflow-hidden">
+                <div className="hidden sm:flex items-center gap-3 shrink-0 w-64 justify-end">
+                  <div className="w-28 h-1.5 rounded-full bg-secondary overflow-hidden shrink-0">
                     <GrowBar widthPct={pol.compliancePct} className={cn('h-full rounded-full', pol.compliancePct >= 85 ? 'bg-green' : pol.compliancePct >= 60 ? 'bg-amber' : 'bg-red')} />
                   </div>
-                  <span className="text-[11px] font-mono font-semibold text-foreground w-9 text-right">{pol.compliancePct}%</span>
+                  <span className="text-[11px] font-mono font-semibold text-foreground w-9 text-right shrink-0">{pol.compliancePct}%</span>
+                  <span className={cn('shrink-0 w-24 text-center px-2 py-1 rounded-md border text-[10px] font-semibold', cb.cls)}>{cb.label}</span>
                 </div>
-                <span className={cn('shrink-0 px-2 py-1 rounded-md border text-[10px] font-semibold', cb.cls)}>{cb.label}</span>
               </button>
 
               <AnimatePresence>

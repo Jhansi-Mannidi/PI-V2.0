@@ -40,7 +40,7 @@ const TABS: { id: TabId; label: string; icon: typeof LayoutGrid }[] = [
 export default function RiskManagementPage() {
   const { aiEnabled } = useAI()
   const [tab, setTab] = useState<TabId>('overview')
-  const [captureOpen, setCaptureOpen] = useState(false)
+  const [showCaptureDrawer, setShowCaptureDrawer] = useState(false)
   const [registerProgram, setRegisterProgram] = useState<string | null>(null)
   const [registerCategory, setRegisterCategory] = useState<string | null>(null)
 
@@ -77,7 +77,11 @@ export default function RiskManagementPage() {
               )
             })}
           </div>
-          <Button onClick={() => setCaptureOpen(true)} size="sm" className="gap-1.5 shrink-0 self-start bg-gold text-navy font-semibold">
+          <Button 
+            onClick={() => setShowCaptureDrawer(true)}
+            size="sm" 
+            className="gap-1.5 shrink-0 self-start bg-gold text-navy font-semibold"
+          >
             <Plus className="h-3.5 w-3.5" />
             Capture Risk
           </Button>
@@ -103,7 +107,6 @@ export default function RiskManagementPage() {
               <RiskRegister
                 initialProgram={registerProgram}
                 initialCategory={registerCategory}
-                onCapture={() => setCaptureOpen(true)}
               />
             )}
             {tab === 'issues' && <IssueBoard />}
@@ -113,7 +116,7 @@ export default function RiskManagementPage() {
         </AnimatePresence>
       </div>
 
-      <RiskCaptureForm open={captureOpen} onClose={() => setCaptureOpen(false)} />
+      <RiskCaptureForm open={showCaptureDrawer} onClose={() => setShowCaptureDrawer(false)} />
     </AppShell>
   )
 }

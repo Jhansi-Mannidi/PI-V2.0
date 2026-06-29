@@ -19,7 +19,7 @@ const categories = [
 
 export function CategoryTabStrip({ activeCategory, onCategoryChange }: CategoryTabStripProps) {
   return (
-    <div className="sticky top-0 z-20 bg-background/80 dark:bg-background/60 backdrop-blur-md border-b border-border/50">
+    <div className="bg-background border-b border-border/50">
       <div className="overflow-x-auto scrollbar-hide">
         <div className="flex gap-1 p-4 min-w-max px-4 sm:px-5">
           {categories.map((cat) => {

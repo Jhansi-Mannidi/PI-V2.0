@@ -30,7 +30,7 @@ const workflowStages = [
   { id: 'draft', label: 'Drafting', responsible: 'Alice Cox · LineSight', sla: 'Same cycle' },
   { id: 'internal', label: 'Internal Review', responsible: 'Brian Smith · Portfolio Director', sla: '2 business days' },
   { id: 'qa', label: 'QA/QC', responsible: 'Alisha · Portfolio QA', sla: '1 business day' },
-  { id: 'anu', label: 'Anu Final Approval', responsible: 'Anu Reddi · Senior Director', sla: '50d target post-submission' },
+  { id: 'anu', label: 'Anu Final Approval', responsible: 'Anu Reddy · Senior Director', sla: '50d target post-submission' },
   { id: 'submitted', label: 'Submitted for Funding', responsible: 'Treasury / Finance', sla: '—' },
 ] as const
 
@@ -312,7 +312,7 @@ export default function TermsheetPage() {
                       label: 'Primary Reviewer',
                       required: true,
                       options: [
-                        { value: 'sl', label: 'Sophia Lamb — Sr PM' },
+                        { value: 'sl', label: 'Sophia Lam — Sr PM' },
                         { value: 'hc', label: 'Hasit Chetal — Controls Lead' },
                         { value: 'bs', label: 'Brian Steinberg — Program Manager' },
                       ],
