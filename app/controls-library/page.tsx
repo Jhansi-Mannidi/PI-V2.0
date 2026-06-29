@@ -6,6 +6,7 @@ import { AppShell } from '@/components/app-shell'
 import { Button } from '@/components/ui/button'
 import { PulseIndicator, FadeUp, GrowBar } from '@/components/animated-primitives'
 import { AuditSchedulerModal } from '@/components/governance/audit-scheduler-modal'
+import { AddControlModal } from '@/components/controls/add-control-modal'
 import { cn } from '@/lib/utils'
 import {
   ShieldCheck, Search, Filter, Plus, UserPlus, Download, CalendarDays,
@@ -224,6 +225,7 @@ export default function ControlsLibraryPage() {
   const [selectedControl, setSelectedControl] = React.useState<Control | null>(null)
   const [schedulerFor, setSchedulerFor] = React.useState<Control | null>(null)
   const [addSchedulerOpen, setAddSchedulerOpen] = React.useState(false)
+  const [addControlOpen, setAddControlOpen] = React.useState(false)
   const [now] = React.useState(new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }))
 
   // Use live store controls (merged with seed for any missing entries)
@@ -279,7 +281,10 @@ export default function ControlsLibraryPage() {
               <Button variant="outline" className="h-9 text-xs gap-1.5 border-line" onClick={() => setAddSchedulerOpen(true)}>
                 <CalendarDays className="w-3.5 h-3.5" />Schedule Audit
               </Button>
-              <Button className="h-9 text-xs gap-1.5 bg-gold text-navy border border-gold font-semibold">
+              <Button
+                onClick={() => setAddControlOpen(true)}
+                className="h-9 text-xs gap-1.5 bg-gold text-navy border border-gold font-semibold"
+              >
                 <Plus className="w-3.5 h-3.5" />Add Control
               </Button>
             </div>
@@ -555,6 +560,16 @@ export default function ControlsLibraryPage() {
           onSave={() => { setSchedulerFor(null); setAddSchedulerOpen(false) }}
         />
       )}
+
+      {/* ── Add control modal ── */}
+      <AddControlModal
+        open={addControlOpen}
+        onClose={() => setAddControlOpen(false)}
+        onCreate={(control) => {
+          console.log('[v0] New control created:', control)
+          setAddControlOpen(false)
+        }}
+      />
     </AppShell>
   )
 }
