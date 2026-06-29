@@ -4,7 +4,7 @@ import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
 import { cn } from '@/lib/utils'
-import { ShieldCheck, Download, Bell, LayoutGrid, Activity, Scale, AlertOctagon, Users, CalendarDays, BookOpen, CheckCircle2, AlertTriangle as AlertTriangleIcon, Clock, BarChart3 } from 'lucide-react'
+import { ShieldCheck, Download, Bell, LayoutGrid, Activity, Scale, AlertOctagon, Users, BookOpen } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PulseIndicator } from '@/components/animated-primitives'
 import { ControlsKpiStrip } from '@/components/controls/controls-kpi-strip'
@@ -13,7 +13,6 @@ import { AutoAuditConsole } from '@/components/controls/auto-audit-console'
 import { ComplianceRegister } from '@/components/controls/compliance-register'
 import { ControlGapExplorer } from '@/components/controls/control-gap-explorer'
 import { ControlsLibrary } from '@/components/controls/controls-library'
-import { AuditShell } from '@/components/governance/audit-shell'
 import { useActionModal } from '@/hooks/use-action-modal'
 import {
   CONTROL_GAPS,
@@ -24,9 +23,6 @@ import {
   RECENT_VERDICTS,
 } from '@/lib/controls-data'
 import {
-  CONTROLS_AUDIT_SCHEDULES,
-  CONTROLS_AUDIT_OCCURRENCES,
-  getControlsAuditKpis,
 } from '@/lib/governance-data'
 import { ControlsActivityPanel } from '@/components/controls/controls-activity-panel'
 import { ExportPackModal } from '@/components/controls/export-pack-modal'
@@ -37,70 +33,13 @@ const tabs = [
   { id: 'posture', label: 'Posture', icon: LayoutGrid },
   { id: 'library', label: 'Controls Library', icon: BookOpen },
   { id: 'audit', label: 'Auto-Audit', icon: Activity },
-  { id: 'controls-audit', label: 'Controls Audit', icon: CalendarDays },
+
   { id: 'compliance', label: 'Compliance', icon: Scale },
   { id: 'gaps', label: 'Control Gaps', icon: AlertOctagon },
 ] as const
 
 type TabId = (typeof tabs)[number]['id']
 
-function ControlsAuditPanel() {
-  const kpis = getControlsAuditKpis()
-  const kpiCards = (
-    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-      {[
-        { label: 'This Month', value: kpis.thisMonth, sub: 'scheduled', icon: CalendarDays, tone: 'gold' },
-        { label: 'Completed', value: kpis.completed, sub: 'occurrences', icon: CheckCircle2, tone: 'green' },
-        { label: 'Overdue', value: kpis.overdue, sub: 'need action', icon: AlertTriangleIcon, tone: 'red' },
-        { label: 'Pending Review', value: kpis.pendingReview, sub: 'awaiting sign-off', icon: Clock, tone: 'amber' },
-        { label: 'Pass Rate', value: `${kpis.passRate}%`, sub: 'completed audits', icon: BarChart3, tone: 'teal' },
-        { label: 'Open Findings', value: kpis.openFindings, sub: 'across audits', icon: AlertTriangleIcon, tone: kpis.openFindings > 0 ? 'red' : 'green' },
-      ].map((k, i) => {
-        const toneMap: Record<string, { bg: string; text: string }> = {
-          gold: { bg: 'bg-gold/15', text: 'text-gold' },
-          green: { bg: 'bg-green-bg', text: 'text-green' },
-          red: { bg: 'bg-red-bg', text: 'text-red' },
-          amber: { bg: 'bg-amber-bg', text: 'text-amber' },
-          teal: { bg: 'bg-teal/10', text: 'text-teal' },
-        }
-        const t = toneMap[k.tone] ?? toneMap.gold
-        return (
-          <motion.div key={k.label} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.25, delay: i * 0.04, ease }} className="bg-card rounded-xl border border-line p-3.5 shadow-sm flex items-center gap-3">
-            <div className={cn('w-8 h-8 rounded-lg flex items-center justify-center shrink-0', t.bg)}>
-              <k.icon className={cn('w-4 h-4', t.text)} />
-            </div>
-            <div>
-              <p className={cn('text-xl font-mono font-bold leading-none', t.text)}>{k.value}</p>
-              <p className="text-[11px] font-semibold text-foreground mt-0.5">{k.label}</p>
-              <p className="text-[10px] text-muted-foreground">{k.sub}</p>
-            </div>
-          </motion.div>
-        )
-      })}
-    </div>
-  )
-  return (
-    <AuditShell
-      type="controls"
-      accentColor="text-gold"
-      accentBg="bg-gold"
-      accentBorder="border-gold"
-      schedulePageHref="/controls-audit/schedule"
-      schedules={CONTROLS_AUDIT_SCHEDULES}
-      occurrences={CONTROLS_AUDIT_OCCURRENCES}
-      kpis={[
-        { label: 'This Month', value: kpis.thisMonth, sub: 'scheduled', icon: CalendarDays, tone: 'gold' },
-        { label: 'Completed', value: kpis.completed, sub: 'occurrences', icon: CheckCircle2, tone: 'green' },
-        { label: 'Overdue', value: kpis.overdue, sub: 'need action', icon: AlertTriangleIcon, tone: 'red' },
-        { label: 'Pending Review', value: kpis.pendingReview, sub: 'awaiting sign-off', icon: Clock, tone: 'amber' },
-        { label: 'Pass Rate', value: `${kpis.passRate}%`, sub: 'completed audits', icon: BarChart3, tone: 'teal' },
-      ]}
-      renderScheduleExtra={(s) => (
-        <span className="text-[10px] text-muted-foreground">{s.scopeItemIds.length} controls</span>
-      )}
-    />
-  )
-}
 
 export default function ControlsPage() {
   const action = useActionModal()
@@ -344,9 +283,7 @@ export default function ControlsPage() {
           )}
           {tab === 'library' && <ControlsLibrary />}
           {tab === 'audit' && <AutoAuditConsole />}
-          {tab === 'controls-audit' && (
-            <ControlsAuditPanel />
-          )}
+
           {tab === 'compliance' && <ComplianceRegister />}
           {tab === 'gaps' && <ControlGapExplorer />}
         </motion.div>
