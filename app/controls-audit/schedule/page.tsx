@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import {
   ArrowLeft, CalendarClock, Loader2, Save,
   Shield, Users, Calendar, Clock, ClipboardList, ChevronRight,
@@ -97,6 +98,9 @@ export default function ControlsAuditSchedulePage() {
     }
 
     saveUserSchedule(newSchedule)
+    toast.success('Audit schedule created', {
+      description: `${newSchedule.name} (${newSchedule.id}) is now active and will run ${newSchedule.frequency.toLowerCase()}.`,
+    })
     router.push('/controls-audit')
   }
 

@@ -2,6 +2,7 @@
 
 import * as React from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'sonner'
 import { ArrowLeft, Scale, ChevronRight, Loader2, CalendarDays, Users, ShieldCheck } from 'lucide-react'
 import { motion } from 'framer-motion'
 import { AppShell } from '@/components/app-shell'
@@ -79,6 +80,9 @@ export default function ComplianceAuditSchedulePage() {
     }
 
     saveUserSchedule(newSchedule)
+    toast.success('Compliance audit schedule created', {
+      description: `${newSchedule.name} (${newSchedule.id}) is now active and will run ${newSchedule.frequency.toLowerCase()}.`,
+    })
     router.push('/compliance-audit')
   }
 
