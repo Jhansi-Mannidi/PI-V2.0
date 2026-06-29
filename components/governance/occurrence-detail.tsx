@@ -57,7 +57,7 @@ export function OccurrenceDetail({ occurrence, onClose, currentUserRole = 'Portf
 
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center sm:p-4 bg-black/40 backdrop-blur-sm">
-      <div className="bg-card border border-line rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-3xl max-h-[92vh] flex flex-col overflow-hidden">
+      <div className="bg-card border border-line rounded-t-2xl sm:rounded-2xl shadow-xl w-full sm:max-w-3xl h-[560px] flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-start justify-between px-5 py-4 border-b border-line">
           <div className="flex-1 min-w-0">
