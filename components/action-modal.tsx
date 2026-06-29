@@ -268,9 +268,9 @@ export function ActionModal({
         {requiredFields.length > 0 && (
           <>
             <div className="hidden sm:flex items-center gap-2">
-              <div className="w-32 h-1.5 rounded-full bg-line overflow-hidden">
+              <div className="w-32 h-2 rounded-full bg-line overflow-hidden shadow-sm">
                 <motion.div
-                  className={cn('h-full rounded-full', tc.accent)}
+                  className="h-full rounded-full bg-gradient-to-r from-gold to-gold/80 shadow-sm"
                   initial={{ width: 0 }}
                   animate={{ width: `${progress}%` }}
                   transition={{ duration: 0.4, ease: 'easeOut' }}
@@ -342,43 +342,40 @@ export function ActionModal({
         {/* ════════════════════════════════════════
             LEFT COLUMN — Identity + Context
         ════════════════════════════════════════ */}
-        <div className="flex flex-col gap-5 px-6 py-7 overflow-y-auto">
+        <div className="flex flex-col gap-5 px-6 py-7 overflow-y-auto" style={{ backgroundColor: tone === 'primary' ? 'var(--navy-soft)' : tone === 'success' ? 'var(--green-bg)' : tone === 'warning' ? 'var(--amber-bg)' : tone === 'destructive' ? 'var(--red-bg)' : 'var(--teal-soft)' }}>
 
           {/* Hero identity card */}
           <motion.div
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28 }}
-            className={cn(
-              'relative overflow-hidden rounded-2xl border p-5',
-              tc.bg, tc.border,
-            )}
+            className="relative overflow-hidden rounded-2xl border p-5 bg-white shadow-md border-line"
           >
-            {/* Subtle gradient wash */}
-            <div className={cn('absolute inset-0 bg-gradient-to-br opacity-60 pointer-events-none', tc.heroGradient)} />
+            {/* Vibrant tone-accented gradient wash */}
+            <div className={cn('absolute inset-0 bg-gradient-to-br opacity-100 pointer-events-none', tc.heroGradient)} />
 
             <div className="relative flex items-start gap-4">
               <div className={cn(
-                'shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center border',
-                tc.badge, tc.border, tc.glow,
+                'shrink-0 w-14 h-14 rounded-2xl flex items-center justify-center border shadow-md',
+                tc.button,
               )}>
-                <Icon className={cn('w-5 h-5', tc.icon)} />
+                <Icon className={cn('w-6 h-6 text-white')} />
               </div>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-2 flex-wrap">
                   <span className={cn(
-                    'inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded-full border',
-                    tc.pillBg, tc.border, tc.pillText,
+                    'inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-[0.14em] px-2 py-0.5 rounded-full border text-white',
+                    tc.button,
                   )}>
                     <Zap className="w-2.5 h-2.5" />
                     {TONE_LABELS[tone]}
                   </span>
                 </div>
-                <h3 className="text-[15px] font-bold text-foreground leading-tight mt-2">
+                <h3 className={cn('text-[16px] font-bold leading-tight mt-3', tc.icon)}>
                   {title}
                 </h3>
                 {description && (
-                  <p className="text-[12px] text-muted-foreground mt-1.5 leading-relaxed">
+                  <p className="text-[12px] text-muted-foreground mt-2 leading-relaxed">
                     {description}
                   </p>
                 )}
@@ -392,12 +389,12 @@ export function ActionModal({
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.28, delay: 0.06 }}
-              className="rounded-2xl border border-line bg-card overflow-hidden shadow-sm"
+              className="rounded-2xl border border-line bg-white overflow-hidden shadow-md"
             >
               {/* Header */}
-              <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/50">
-                <Activity className="w-3.5 h-3.5 text-muted-foreground" />
-                <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+              <div className={cn('flex items-center gap-2 px-4 py-3 border-b border-line text-white', tc.button)}>
+                <Activity className="w-3.5 h-3.5" />
+                <p className="text-[10px] font-bold uppercase tracking-[0.14em]">
                   Acting on
                 </p>
               </div>
@@ -429,11 +426,11 @@ export function ActionModal({
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.28, delay: 0.12 }}
-            className="rounded-2xl border border-line bg-card overflow-hidden shadow-sm"
+            className="rounded-2xl border border-line bg-white overflow-hidden shadow-md"
           >
-            <div className="flex items-center gap-2 px-4 py-3 border-b border-line bg-secondary/50">
-              <Shield className="w-3.5 h-3.5 text-muted-foreground" />
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-muted-foreground">
+            <div className={cn('flex items-center gap-2 px-4 py-3 border-b border-line text-white', tc.button)}>
+              <Shield className="w-3.5 h-3.5" />
+              <p className="text-[10px] font-bold uppercase tracking-[0.14em]">
                 Workflow
               </p>
             </div>
